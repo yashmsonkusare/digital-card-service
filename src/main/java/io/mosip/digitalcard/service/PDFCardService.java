@@ -2,7 +2,7 @@ package io.mosip.digitalcard.service;
 
 import io.mosip.kernel.core.websub.model.EventModel;
 
-public interface PrintService {
+public interface PDFCardService {
     
 	/**
 	 * Get the card

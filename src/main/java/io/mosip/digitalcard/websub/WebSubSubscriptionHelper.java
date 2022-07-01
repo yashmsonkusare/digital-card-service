@@ -1,10 +1,8 @@
 package io.mosip.digitalcard.websub;
 
-import io.mosip.digitalcard.entity.CredentialStatusEvent;
 import io.mosip.digitalcard.util.DigitalCardRepoLogger;
 import io.mosip.digitalcard.util.Utility;
 import io.mosip.kernel.core.logger.spi.Logger;
-import io.mosip.kernel.core.websub.model.EventModel;
 import io.mosip.kernel.core.websub.spi.PublisherClient;
 import io.mosip.kernel.core.websub.spi.SubscriptionClient;
 import io.mosip.kernel.websub.api.exception.WebSubClientException;

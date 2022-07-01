@@ -4,12 +4,11 @@ import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
 import io.mosip.digitalcard.controller.DigitalCardController;
 import io.mosip.digitalcard.dto.CredentialRequestDto;
 import io.mosip.digitalcard.dto.CredentialResponse;
-import io.mosip.digitalcard.dto.CredentialStatusResponse;
 import io.mosip.digitalcard.entity.DigitalCardTransactionEntity;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
 import io.mosip.digitalcard.service.DigitalCardService;
-import io.mosip.digitalcard.service.PrintService;
+import io.mosip.digitalcard.service.PDFCardService;
 import io.mosip.digitalcard.util.CredentialUtil;
 import io.mosip.digitalcard.util.DigitalCardRepoLogger;
 import io.mosip.digitalcard.util.RestClient;
@@ -32,7 +31,7 @@ import java.time.LocalDateTime;
 public class DigitalCardServiceImpl implements DigitalCardService {
 
     @Autowired
-    private PrintService printServiceImpl;
+    private PDFCardService pdfCardServiceImpl;
 
     @Value("${mosip.digitalcard.credential.request.partner.id}")
     private String partnerId;
@@ -61,13 +60,13 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     @Override
     public boolean generateDigitalCard(EventModel eventModel) {
-        boolean isPrinted;
+        boolean isGenerated;
         try {
-            isPrinted=printServiceImpl.generateCard(eventModel);
+            isGenerated=pdfCardServiceImpl.generateCard(eventModel);
         } catch (Exception e) {
             throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
         }
-        return isPrinted;
+        return isGenerated;
     }
 
     @Override
@@ -91,11 +90,6 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
         }
     }
-   /* private CredentialStatusResponse checkStatus(String credentialReqId){
-        CredentialStatusResponse credentialStatusResponse=new CredentialStatusResponse();
-        credentialStatusResponse=credentialUtil.getStatus(credentialReqId);
-        return credentialStatusResponse;
-    }*/
 
     @Override
     public boolean createDigitalCard(EventModel eventModel) {

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mosip.digitalcard.constant.ApiName;
-import io.mosip.digitalcard.dto.IdResponseDTO1;
+import io.mosip.digitalcard.dto.IdResponseDTO;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.kernel.core.exception.ExceptionUtils;
 import io.mosip.kernel.core.exception.ServiceError;
@@ -172,10 +172,10 @@ public class Utility {
             logger.debug("Utilities::retrieveIdrepoJson()::entry");
             List<String> pathSegments = new ArrayList<>();
             pathSegments.add(uin);
-            IdResponseDTO1 idResponseDto;
+            IdResponseDTO idResponseDto;
 
-            idResponseDto = (IdResponseDTO1) restClient.getApi(ApiName.IDREPOGETIDBYUIN, pathSegments, "", "",
-                    IdResponseDTO1.class);
+            idResponseDto = (IdResponseDTO) restClient.getApi(ApiName.IDREPOGETIDBYUIN, pathSegments, "", "",
+                    IdResponseDTO.class);
             if (idResponseDto == null) {
                 logger.debug("Utilities::retrieveIdrepoJson()::exit idResponseDto is null");
                 return null;

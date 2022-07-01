@@ -5,24 +5,18 @@ import io.mosip.digitalcard.dto.CredentialRequestDto;
 import io.mosip.digitalcard.dto.CredentialResponse;
 import io.mosip.digitalcard.dto.CredentialResponseDto;
 import io.mosip.digitalcard.dto.CredentialStatusResponse;
-import io.mosip.digitalcard.exception.ApiNotAccessibleException;
 import io.mosip.digitalcard.exception.ApisResourceAccessException;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.kernel.core.http.RequestWrapper;
 import io.mosip.kernel.core.http.ResponseWrapper;
-import io.mosip.kernel.core.util.DateUtils;
-import io.mosip.kernel.core.util.JsonUtils;
-import org.apache.commons.collections.map.HashedMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class CredentialUtil {
@@ -41,7 +35,6 @@ public class CredentialUtil {
             requestDto.setRequest(dto);
             requestDto.setRequesttime(LocalDateTime.now());
             ResponseWrapper<CredentialResponse> responseDto=restClient.postApi(ApiName.CREDENTIAL_REQ_URL,null,"","", MediaType.APPLICATION_JSON,requestDto,ResponseWrapper.class);
-            System.out.println(">>>>>>>>"+responseDto.toString());
             credentialResponse=utility.readValue(utility.writeValueAsString(responseDto.getResponse()),
                     CredentialResponse.class);
         } catch (ApisResourceAccessException | IOException e) {
@@ -57,7 +50,6 @@ public class CredentialUtil {
         pathsegments.add(requestId);
         try {
             responseDto =restClient.getApi(ApiName.CREDENTIAL_STATUS_URL,pathsegments,"","",ResponseWrapper.class);
-            System.out.println(">>>>>>getStatus>>>>>>>>>"+responseDto);
             credentialStatusResponse=utility.readValue(utility.writeValueAsString(responseDto.getResponse()),
                     CredentialStatusResponse.class);
         }  catch (Exception e) {

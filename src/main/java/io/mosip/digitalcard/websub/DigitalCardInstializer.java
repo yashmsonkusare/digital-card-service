@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 @Component
-public class DigitalCardInstializer implements ApplicationListener<ApplicationReadyEvent> {
+public class DigitalCardInitializer implements ApplicationListener<ApplicationReadyEvent> {
 	@Value("${retry-count:3}")
 	private int retryCount;
 
@@ -61,7 +61,6 @@ public class DigitalCardInstializer implements ApplicationListener<ApplicationRe
 		}
 		else {
 			LOGGER.info(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
-
 					"Scheduling for re-subscription is Disabled as the re-subsctription delay value is: "
 							+ reSubscriptionDelaySecs);
 
@@ -89,14 +88,14 @@ public class DigitalCardInstializer implements ApplicationListener<ApplicationRe
 	private boolean initSubsriptions() {
 		try {
 			LOGGER.info(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
-					"Initializing subscribptions..");
+					"Initializing subscriptions..");
 			webSubSubscriptionHelper.initSubsriptions(credentialTopic,credentialCallBackUrl);
 			webSubSubscriptionHelper.initSubsriptions(identityCreateTopic,identityCreateCallBackUrl);
 			webSubSubscriptionHelper.initSubsriptions(identityUpdateTopic,identityUpdateCallBackUrl);
 			return true;
 		} catch (Exception e) {
 			LOGGER.error(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
-					"Initializing subscribptions failed: " + e.getMessage());
+					"Initializing subscriptions failed: " + e.getMessage());
 			return false;
 		}
 	}

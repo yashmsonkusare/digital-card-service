@@ -32,9 +32,8 @@ public enum DigitalCardServiceErrorCodes {
 	IO_EXCEPTION("DCS-009", "IO exception"),
 	/** The datashare exception. */
 	DATASHARE_EXCEPTION("DCS-011", "Datashare response is null"),
-	
+
 	SIGNATURE_EXCEPTION("DCS-012", "Failed to generate digital signature"),
-	
 	DATA_ENCRYPTION_FAILURE_EXCEPTION("DCS-013", "Data Encryption failed"),
 	
 	WEBSUB_FAIL_EXCEPTION("DCS-014", "Websub event failed"),
@@ -46,21 +45,24 @@ public enum DigitalCardServiceErrorCodes {
 	PIN_NOT_PROVIDER("DCS-017", "Pin not available to encrypt the data."),
 
 	PARTNER_EXCEPTION("DCS-018", "Failed to get partner extraction policy details"),
+
 	QRCODE_NOT_GENERATED("DCS-019", "Error while generating QR Code"),
+
 	PDF_NOT_GENERATED("DCS-020", "Error while generating PDF for UIN Card"),
+
 	DATA_NOT_FOUND("DCS-021","Applicant Photo Not Found"),
-	IDENTITY_NOT_FOUND("DCS-022",
-			"Unable to Find Identity Field in ID JSON"),
+
+	IDENTITY_NOT_FOUND("DCS-022", "Unable to Find Identity Field in ID JSON"),
+
 	APPLICANT_PHOTO_NOT_SET( "DCS-023", "Error while setting applicant photo"),
+
 	QRCODE_NOT_SET( "DCS-024", "Error while setting qrCode for uin card"),
+
 	TEM_PROCESSING_FAILURE("DCS-025", "The Processing of Template Failed "),
 
 	DIGITAL_CARD_NOT_GENERATED("DCS-026", "Error while generating PDF for Digital Card"),
 
 	DIGITAL_CARD_NOT_CREATED("DCS-027", "Digital Card is not generated try after some time.");
-
-
-
 
 
 	/** The error code. */

@@ -11,16 +11,16 @@ import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
 import io.mosip.digitalcard.constant.IdType;
 import io.mosip.digitalcard.constant.PDFGeneratorExceptionCodeConstant;
 import io.mosip.digitalcard.constant.UinCardType;
-import io.mosip.digitalcard.dto.DataShare;
+import io.mosip.digitalcard.dto.DataShareDto;
 import io.mosip.digitalcard.dto.JsonValue;
-import io.mosip.digitalcard.entity.CredentialStatusEvent;
-import io.mosip.digitalcard.entity.StatusEvent;
+import io.mosip.digitalcard.service.PDFCardService;
+import io.mosip.digitalcard.websub.CredentialStatusEvent;
+import io.mosip.digitalcard.websub.StatusEvent;
 import io.mosip.digitalcard.exception.ApiNotAccessibleException;
 import io.mosip.digitalcard.exception.DataShareException;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.exception.IdentityNotFoundException;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
-import io.mosip.digitalcard.service.PrintService;
 import io.mosip.digitalcard.service.UinCardGenerator;
 import io.mosip.digitalcard.util.*;
 import io.mosip.digitalcard.websub.WebSubSubscriptionHelper;
@@ -53,7 +53,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-public class PrintServiceImpl implements PrintService {
+public class PDFCardServiceImpl implements PDFCardService {
 
 	@Value("${mosip.digitalcard.websub.publish.topic:CREDENTIAL_STATUS_UPDATE}")
 	private String topic;
@@ -89,10 +89,10 @@ public class PrintServiceImpl implements PrintService {
 	private static final String QRCODE = "QrCode";
 
 	/** The Constant UINCARDPASSWORD. */
-	private static final String UINCARDPASSWORD = "mosip.registration.processor.print.service.uincard.password";
+	private static final String UINCARDPASSWORD = "mosip.digitalcard.uincard.password";
 
 	/** The print logger. */
-	Logger printLogger = DigitalCardRepoLogger.getLogger(PrintServiceImpl.class);
+	Logger printLogger = DigitalCardRepoLogger.getLogger(PDFCardServiceImpl.class);
 
 	/** The template generator. */
 	@Autowired
@@ -148,7 +148,7 @@ public class PrintServiceImpl implements PrintService {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	public PrintServiceImpl() {
+	public PDFCardServiceImpl() {
 	}
 
 
@@ -547,16 +547,16 @@ public class PrintServiceImpl implements PrintService {
 
 	private void printStatusUpdate(String requestId, byte[] data, String credentialType, String rid)
 			throws DataShareException, ApiNotAccessibleException, IOException, Exception {
-		DataShare dataShare = null;
-		dataShare = dataShareUtil.getDataShare(data, policyId, partnerId);
+		DataShareDto dataShareDto = null;
+		dataShareDto = dataShareUtil.getDataShare(data, policyId, partnerId);
 		CredentialStatusEvent creEvent = new CredentialStatusEvent();
 		LocalDateTime currentDtime = DateUtils.getUTCCurrentDateTime();
-		digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE",dataShare.getUrl());
+		digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl());
 		StatusEvent sEvent = new StatusEvent();
 		sEvent.setId(UUID.randomUUID().toString());
 		sEvent.setRequestId(requestId);
 		sEvent.setStatus("STORED");
-		sEvent.setUrl(dataShare.getUrl());
+		sEvent.setUrl(dataShareDto.getUrl());
 		sEvent.setTimestamp(Timestamp.valueOf(currentDtime).toString());
 		creEvent.setPublishedOn(LocalDateTime.now().toString());
 		creEvent.setPublisher("PRINT_SERVICE");
@@ -564,41 +564,5 @@ public class PrintServiceImpl implements PrintService {
 		creEvent.setEvent(sEvent);
 		webSubSubscriptionHelper.printStatusUpdateEvent(topic, creEvent);
 	}
-/*
-	public org.json.JSONObject decryptAttribute(org.json.JSONObject data, String encryptionPin, String credential)
-			throws ParseException {
-
-		// org.json.JSONObject jsonObj = new org.json.JSONObject(credential);
-		JSONParser parser = new JSONParser(); // this needs the "json-simple" library
-		Object obj = parser.parse(credential);
-		JSONObject jsonObj = (JSONObject) obj;
-
-		JSONArray jsonArray = (JSONArray) jsonObj.get("protectedAttributes");
-		if (Objects.isNull(jsonArray)) {
-			return data;
-		}
-		for (Object str : jsonArray) {
-
-				CryptoWithPinRequestDto cryptoWithPinRequestDto = new CryptoWithPinRequestDto();
-				CryptoWithPinResponseDto cryptoWithPinResponseDto = new CryptoWithPinResponseDto();
-
-				cryptoWithPinRequestDto.setUserPin(encryptionPin);
-				cryptoWithPinRequestDto.setData(data.getString(str.toString()));
-				try {
-					cryptoWithPinResponseDto = cryptoUtil.decryptWithPin(cryptoWithPinRequestDto);
-				} catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException
-						| InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
-					printLogger.error("Error while decrypting the data" ,e);
-					throw new CryptoManagerException(PlatformErrorMessages.PRT_INVALID_KEY_EXCEPTION.getCode(),
-							PlatformErrorMessages.PRT_INVALID_KEY_EXCEPTION.getMessage(), e);
-				}
-				data.put((String) str, cryptoWithPinResponseDto.getData());
-			
-			}
-
-		return data;
-	}
-
- */
 }
 	

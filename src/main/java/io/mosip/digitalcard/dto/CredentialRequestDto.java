@@ -8,11 +8,8 @@ import java.util.Map;
 @Data
 public class CredentialRequestDto {
 
-
-	
 	private String id;
 	private String credentialType;
-	//partner id
 	private String issuer;
     private String  recepiant;
 	private String user;

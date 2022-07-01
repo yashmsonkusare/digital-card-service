@@ -2,18 +2,35 @@ package io.mosip.digitalcard.dto;
 
 import lombok.Data;
 
+
+
+/**
+ * Instantiates a new data share.
+ */
+
+/**
+ * Instantiates a new data share.
+ */
 @Data
 public class DataShareDto {
+
 	
-    private String validForInMinutes;
+	/** The url. */
+	private String url;
 	
-	private String transactionsAllowed;
+	/** The valid for in minutes. */
+	private int validForInMinutes;
 	
-	private String encryptionType;
+	/** The transactions allowed. */
+	private int transactionsAllowed;
 	
-	private String shareDomain;
+	/** The policy id. */
+	private String policyId;
 	
-	private String typeOfShare;
+	/** The subscriber id. */
+	private String subscriberId;
 	
-	private String source;
+	/** The signature. */
+	private String signature;
+
 }

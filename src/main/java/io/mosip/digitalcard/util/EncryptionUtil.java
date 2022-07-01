@@ -71,9 +71,9 @@ public class EncryptionUtil {
 			cryptomanagerRequestDto.setApplicationId(applicationId);
 			cryptomanagerRequestDto.setData(dataToBedecrypted);
 			cryptomanagerRequestDto.setReferenceId(partnerId);
-		//	cryptomanagerRequestDto
-		//			.setPrependThumbprint(
-		//					env.getProperty("mosip.credential.service.share.prependThumbprint", Boolean.class));
+			cryptomanagerRequestDto
+					.setPrependThumbprint(
+							env.getProperty("crypto.PrependThumbprint.enable", Boolean.class));
 			DateTimeFormatter format = DateTimeFormatter.ofPattern(env.getProperty(DATETIME_PATTERN));
 			LocalDateTime localdatetime = LocalDateTime
 					.parse(DateUtils.getUTCCurrentDateTimeString(env.getProperty(DATETIME_PATTERN)), format);

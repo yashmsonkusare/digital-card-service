@@ -10,7 +10,7 @@ import java.util.List;
  * @author M1048358 Alok
  */
 @Data
-public class ResponseDTO {
+public class IdentityResponseDTO {
 
 	/** The entity. */
 	private String entity;

@@ -1,9 +1,7 @@
 package io.mosip.digitalcard.controller;
 
 import io.mosip.digitalcard.service.DigitalCardService;
-import io.mosip.digitalcard.service.impl.PrintServiceImpl;
 import io.mosip.digitalcard.util.DigitalCardRepoLogger;
-import io.mosip.kernel.core.http.ResponseWrapper;
 import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.websub.model.EventModel;
 import io.mosip.kernel.websub.api.annotation.PreAuthenticateContentAndVerifyIntent;

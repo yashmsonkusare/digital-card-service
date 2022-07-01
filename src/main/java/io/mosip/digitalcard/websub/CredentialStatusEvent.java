@@ -1,4 +1,4 @@
-package io.mosip.digitalcard.entity;
+package io.mosip.digitalcard.websub;
 
 import lombok.Data;
 @Data

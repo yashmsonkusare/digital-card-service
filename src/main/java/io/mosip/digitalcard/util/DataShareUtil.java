@@ -3,7 +3,7 @@ package io.mosip.digitalcard.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mosip.digitalcard.constant.ApiName;
 import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
-import io.mosip.digitalcard.dto.DataShare;
+import io.mosip.digitalcard.dto.DataShareDto;
 import io.mosip.digitalcard.dto.DataShareResponseDto;
 import io.mosip.digitalcard.dto.ErrorDTO;
 import io.mosip.digitalcard.exception.ApiNotAccessibleException;
@@ -11,7 +11,6 @@ import io.mosip.digitalcard.exception.DataShareException;
 import io.mosip.kernel.core.exception.ExceptionUtils;
 import io.mosip.kernel.core.logger.spi.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
@@ -43,7 +42,7 @@ public class DataShareUtil {
 	@Autowired
 	private Environment env;
 
-	public DataShare getDataShare(byte[] data, String policyId, String partnerId)
+	public DataShareDto getDataShare(byte[] data, String policyId, String partnerId)
 			throws ApiNotAccessibleException, IOException, DataShareException {
 		long fileLengthInBytes=0;
 		try {
@@ -98,7 +97,7 @@ public class DataShareUtil {
 
 				LOGGER.debug(Utility.getUser(), " ", "",
 						"data share created");
-			return responseObject.getDataShare();
+			return responseObject.getDataShareDto();
 
 			}
 		} catch (Exception e) {
