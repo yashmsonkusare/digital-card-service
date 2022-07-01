@@ -32,7 +32,7 @@ import io.mosip.kernel.core.qrcodegenerator.spi.QrCodeGenerator;
 import io.mosip.kernel.core.util.DateUtils;
 import io.mosip.kernel.core.websub.model.EventModel;
 import io.mosip.kernel.qrcode.generator.zxing.constant.QrVersion;
-//import io.mosip.vercred.CredentialsVerifier;
+import io.mosip.vercred.CredentialsVerifier;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
 import org.json.JSONException;
@@ -73,9 +73,8 @@ public class PrintServiceImpl implements PrintService {
 	/** The Constant VALUE. */
 	private static final String VALUE = "value";
 
-	/** The Constant UIN_CARD_TEMPLATE. */
 	@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
-	private String UIN_CARD_TEMPLATE;
+	private String uinCardTemplate;
 
 	/** The Constant FACE. */
 	private static final String FACE = "Face";
@@ -125,8 +124,8 @@ public class PrintServiceImpl implements PrintService {
 	@Autowired
 	DigitalCardTransactionRepository digitalCardTransactionRepository;
 
-	//@Autowired
-	//private CredentialsVerifier credentialsVerifier;
+	@Autowired
+	private CredentialsVerifier credentialsVerifier;
 
 	@Value("${mosip.digitalcard.datashare.partner.id}")
 	private String partnerId;
@@ -142,6 +141,9 @@ public class PrintServiceImpl implements PrintService {
 
 	@Value("${mosip.digitalcard.verify.credentials.flag:true}")
 	private boolean verifyCredentialsFlag;
+
+	@Value("${mosip.digitalcard.pdf.password.enable.flag:true}")
+	private boolean pdfPasswordFlag;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -167,8 +169,7 @@ public class PrintServiceImpl implements PrintService {
 			decryptedCredential = encryptionUtil.decryptData(credential);
 			if (verifyCredentialsFlag){
 				printLogger.info("Configured received credentials to be verified. Flag {}", verifyCredentialsFlag);
-				boolean verified =true;
-						//credentialsVerifier.verifyCredentials(decodedCredential);
+				boolean verified =credentialsVerifier.verifyCredentials(decryptedCredential);
 				if (!verified) {
 					printLogger.error("Received Credentials failed in verifiable credential verify method. So, the credentials will not be printed." +
 						" Id: {}, Transaction Id: {}", eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId());
@@ -209,7 +210,7 @@ public class PrintServiceImpl implements PrintService {
 		String individualBio = null;
 		Map<String, Object> attributes = new LinkedHashMap<>();
 		boolean isTransactionSuccessful = false;
-		String template = UIN_CARD_TEMPLATE;
+		String template = uinCardTemplate;
 		byte[] pdfbytes = null;
 		try {
 			credentialSubject = getCrdentialSubject(credential);

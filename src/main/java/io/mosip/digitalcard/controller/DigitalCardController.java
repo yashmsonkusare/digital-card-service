@@ -11,10 +11,13 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.ByteArrayInputStream;
 
 @RestController
 @Api(tags = "Digital Card")
@@ -59,9 +62,13 @@ public class DigitalCardController {
     @PostMapping(path = "/{rid}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Request authenticated successfully") })
     @PreAuthenticateContentAndVerifyIntent(secret = "${mosip.digitalcard.websub.secret}", callback = "/v1/digitalcard/credential/callback/notifyStatus", topic = "${mosip.digitalcard.generate.credential.websub.topic}")
-    public ResponseWrapper<?> getDigitalCard(@PathVariable("rid") String rid)  {
+    public ResponseEntity<?> getDigitalCard(@PathVariable("rid") String rid)  {
         byte[] pdfBytes=digitalCardServiceImpl.getDigitalCard(rid,null);
         logger.info("successfully printed the digitalcard");
-        return new ResponseWrapper<>();
+        InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(pdfBytes));
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/pdf"))
+                .header("Content-Disposition", "attachment; filename=\"" +
+                        rid + ".pdf\"")
+                .body((Object) resource);
     }
 }

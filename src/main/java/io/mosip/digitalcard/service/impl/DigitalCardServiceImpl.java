@@ -1,6 +1,7 @@
 package io.mosip.digitalcard.service.impl;
 
 import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
+import io.mosip.digitalcard.controller.DigitalCardController;
 import io.mosip.digitalcard.dto.CredentialRequestDto;
 import io.mosip.digitalcard.dto.CredentialResponse;
 import io.mosip.digitalcard.dto.CredentialStatusResponse;
@@ -10,8 +11,10 @@ import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
 import io.mosip.digitalcard.service.DigitalCardService;
 import io.mosip.digitalcard.service.PrintService;
 import io.mosip.digitalcard.util.CredentialUtil;
+import io.mosip.digitalcard.util.DigitalCardRepoLogger;
 import io.mosip.digitalcard.util.RestClient;
 import io.mosip.digitalcard.util.Utility;
+import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.websub.model.EventModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,6 +57,8 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     String credentialRequestId=null;
 
+    Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
+
     @Override
     public boolean generateDigitalCard(EventModel eventModel) {
         boolean isPrinted;
@@ -86,11 +91,11 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
         }
     }
-    private CredentialStatusResponse checkStatus(String credentialReqId){
+   /* private CredentialStatusResponse checkStatus(String credentialReqId){
         CredentialStatusResponse credentialStatusResponse=new CredentialStatusResponse();
         credentialStatusResponse=credentialUtil.getStatus(credentialReqId);
         return credentialStatusResponse;
-    }
+    }*/
 
     @Override
     public boolean createDigitalCard(EventModel eventModel) {
@@ -107,7 +112,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             isCreated=true;
         } catch (DigitalCardServiceException e) {
             isCreated=false;
-            throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
+            logger.error(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage(),e);
         }
         return isCreated;
     }
