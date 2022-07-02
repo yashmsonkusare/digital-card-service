@@ -49,7 +49,7 @@ public class DigitalCardInitializer implements ApplicationListener<ApplicationRe
 
 	private static final String DIGITALCARDINSTIALIZER = "DigitalCardInstializer";
 
-	private static final Logger LOGGER = DigitalCardRepoLogger.getLogger(DigitalCardInstializer.class);
+	private static final Logger LOGGER = DigitalCardRepoLogger.getLogger(DigitalCardInitializer.class);
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
