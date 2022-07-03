@@ -71,18 +71,15 @@ public class DataShareUtil {
 			URL dataShareUrl = null;
 			String url = null;
 
-			String responseString = restClient.postApi(ApiName.CREATEDATASHARE, pathsegments, "", "",
+			String responseString = (String)restClient.postApi(ApiName.CREATEDATASHARE, pathsegments, "", "",
 					MediaType.MULTIPART_FORM_DATA, requestEntity, String.class);
 
 		DataShareResponseDto responseObject = mapper.readValue(responseString, DataShareResponseDto.class);
-
-		if (responseObject == null) {
+			if (responseObject == null) {
 				LOGGER.debug(Utility.getUser(), " ", "",
 						"File size" + " " + fileLengthInBytes);
 				LOGGER.error(Utility.getUser(), " ", "",
 						DigitalCardServiceErrorCodes.DATASHARE_EXCEPTION.getErrorMessage());
-
-			throw new DataShareException();
 		}
 		if (responseObject != null && responseObject.getErrors() != null && !responseObject.getErrors().isEmpty()) {
 
@@ -91,32 +88,18 @@ public class DataShareUtil {
 						"File size" + " " + fileLengthInBytes);
 				LOGGER.error(Utility.getUser(), " ", "",
 					error.getMessage());
-			throw new DataShareException();
-
 		} else {
-
 				LOGGER.debug(Utility.getUser(), " ", "",
 						"data share created");
-			return responseObject.getDataShareDto();
-
+			return responseObject.getDataShare();
 			}
 		} catch (Exception e) {
 			LOGGER.debug(Utility.getUser(), " ", "",
 					"File size" + " " + fileLengthInBytes);
 			LOGGER.error(Utility.getUser(), " ", "",
 					ExceptionUtils.getStackTrace(e));
-			if (e.getCause() instanceof HttpClientErrorException) {
-				HttpClientErrorException httpClientException = (HttpClientErrorException) e.getCause();
-				throw new ApiNotAccessibleException(httpClientException.getResponseBodyAsString());
-			} else if (e.getCause() instanceof HttpServerErrorException) {
-				HttpServerErrorException httpServerException = (HttpServerErrorException) e.getCause();
-				throw new ApiNotAccessibleException(httpServerException.getResponseBodyAsString());
-			} else {
-				throw new DataShareException(e);
-			}
-
 		}
-
+		return null;
 	}
 
 
