@@ -1,5 +1,6 @@
 package io.mosip.digitalcard.service;
 
+import io.mosip.digitalcard.dto.DigitalCardStatusResponseDto;
 import io.mosip.kernel.core.websub.model.EventModel;
 /**
  * The Service DigitalCardService.
@@ -10,7 +11,7 @@ import io.mosip.kernel.core.websub.model.EventModel;
 public interface DigitalCardService {
     boolean generateDigitalCard(EventModel eventModel);
 
-    byte[] getDigitalCard(String rid,String idHash);
+    DigitalCardStatusResponseDto getDigitalCard(String rid);
 
     boolean createDigitalCard(EventModel eventModel);
 }

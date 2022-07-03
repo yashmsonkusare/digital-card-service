@@ -11,5 +11,5 @@ public class DataShareResponseDto extends ResponseWrapper {
 	private static final long serialVersionUID = 1L;
 
 
-    private DataShareDto dataShareDto;
+    private DataShareDto dataShare;
 }

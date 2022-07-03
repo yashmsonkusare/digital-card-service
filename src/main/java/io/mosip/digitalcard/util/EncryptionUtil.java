@@ -62,7 +62,7 @@ public class EncryptionUtil {
 	
 	public String decryptData(String dataToBedecrypted) throws DataEncryptionFailureException, ApiNotAccessibleException {
 		LOGGER.debug(Utility.getUser()," ","",
-				"started encrypting data using partner certificate");
+				"started decrypting data using partner certificate");
 		String decryptedPacket = null;
 		try {
 
@@ -87,7 +87,7 @@ public class EncryptionUtil {
 			CryptomanagerResponseDto responseObject = mapper.readValue(response, CryptomanagerResponseDto.class);
 			if (responseObject != null && responseObject.getErrors() != null && !responseObject.getErrors().isEmpty()) {
 				LOGGER.error(Utility.getUser()," ", "",
-						"credential encryption failed");
+						"credential decryption failed");
 				ServiceError error = responseObject.getErrors().get(0);
 				throw new DataEncryptionFailureException(error.getMessage());
 			}
