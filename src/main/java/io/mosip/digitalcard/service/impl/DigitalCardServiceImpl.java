@@ -40,9 +40,6 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     @Value("${mosip.digitalcard.credential.type}")
     private String credentialType;
 
-    @Value("${mosip.digitalcard.fixedRate.in.milliseconds}")
-    private int delaySeconds;
-
     @Autowired
     private CredentialUtil credentialUtil;
 
