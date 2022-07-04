@@ -61,7 +61,7 @@ public class DigitalCardController {
         return new ResponseEntity<>("request accepted.", HttpStatus.OK);
     }
 
-    @PostMapping(path = "/{rid}")
+    @GetMapping(path = "/{rid}")
     @ApiResponses(value = { @ApiResponse(code = 200, message = "Request authenticated successfully") })
     public ResponseWrapper<DigitalCardStatusResponseDto> getDigitalCard(@PathVariable("rid") String rid)  {
         ResponseWrapper<DigitalCardStatusResponseDto> digitalCardStatusResponseDtoResponseWrapper=new DataShareResponseDto();
