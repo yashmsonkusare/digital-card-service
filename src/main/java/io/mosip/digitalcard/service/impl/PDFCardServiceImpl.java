@@ -12,7 +12,7 @@ import io.mosip.digitalcard.constant.IdType;
 import io.mosip.digitalcard.constant.PDFGeneratorExceptionCodeConstant;
 import io.mosip.digitalcard.constant.UinCardType;
 import io.mosip.digitalcard.dto.DataShareDto;
-import io.mosip.digitalcard.dto.JsonValue;
+import io.mosip.digitalcard.dto.SimpleType;
 import io.mosip.digitalcard.service.PDFCardService;
 import io.mosip.digitalcard.websub.CredentialStatusEvent;
 import io.mosip.digitalcard.websub.StatusEvent;
@@ -43,7 +43,6 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -136,7 +135,7 @@ public class PDFCardServiceImpl implements PDFCardService {
 	@Value("${mosip.template-language}")
 	private String templateLang;
 
-	@Value("#{'${mosip.mandatory-languages:}'.concat('${mosip.optional-languages:}')}")
+	@Value("${mosip.supported-languages}")
 	private String supportedLang;
 
 	@Value("${mosip.digitalcard.verify.credentials.flag:true}")
@@ -213,8 +212,8 @@ public class PDFCardServiceImpl implements PDFCardService {
 		String template = uinCardTemplate;
 		byte[] pdfbytes = null;
 		try {
-			credentialSubject = getCrdentialSubject(credential);
-			org.json.JSONObject decryptedJson =new org.json.JSONObject(credentialSubject);
+			org.json.JSONObject jsonObject = new org.json.JSONObject(credential);
+			org.json.JSONObject decryptedJson = jsonObject.getJSONObject("credentialSubject");
 			if(decryptedJson.has("biometrics")){
 				individualBio = decryptedJson.getString("biometrics");
 				String individualBiometric = new String(individualBio);
@@ -235,12 +234,12 @@ public class PDFCardServiceImpl implements PDFCardService {
 			if (!isPhotoSet) {
 				printLogger.debug(DigitalCardServiceErrorCodes.APPLICANT_PHOTO_NOT_SET.name());
 			}
-			setTemplateAttributes(decryptedJson.toString(), attributes);
+			setTemplateAttributes(decryptedJson, attributes);
 			attributes.put(IdType.UIN.toString(), uin);
 			byte[] textFileByte = createTextFile(decryptedJson.toString());
 			byteMap.put(UIN_TEXT_FILE, textFileByte);
 			boolean isQRcodeSet = setQrCode(decryptedJson.toString(), attributes,isPhotoSet);
-			rid=getRid(decryptedJson.get("id"));
+			rid=decryptedJson.get("id").toString();
 			if (!isQRcodeSet) {
 				printLogger.debug(DigitalCardServiceErrorCodes.QRCODE_NOT_SET.name());
 			}
@@ -253,11 +252,6 @@ public class PDFCardServiceImpl implements PDFCardService {
 			}
 
 			pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password);
-				InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(pdfbytes));
-				  File pdfFile = new File("src/main/resources/uin.pdf");
-				  OutputStream os = new FileOutputStream(pdfFile);
-				  os.write(pdfbytes);
-				  os.close();
 		}
 			printStatusUpdate(requestId, pdfbytes, credentialType,rid);
 			isTransactionSuccessful = true;
@@ -285,11 +279,6 @@ public class PDFCardServiceImpl implements PDFCardService {
 		return byteMap;
 	}
 
-	private String getRid(Object id) {
-		String rid= id.toString().split("/credentials/")[1];
-		return rid;
-	}
-
 	/**
 	 * Creates the text file.
 	 *
@@ -315,8 +304,8 @@ public class PDFCardServiceImpl implements PDFCardService {
 				Object object = demographicIdentity.get(value);
 				if (object instanceof ArrayList) {
 					JSONArray node = utility.getJSONArray(demographicIdentity, value);
-					JsonValue[] jsonValues = Utility.mapJsonNodeToJavaObject(JsonValue.class, node);
-					for (JsonValue jsonValue : jsonValues) {
+					SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, node);
+					for (SimpleType jsonValue : jsonValues) {
 						/*
 						 * if (jsonValue.getLanguage().equals(primaryLang)) printTextFileMap.put(value +
 						 * "_" + primaryLang, jsonValue.getValue()); if
@@ -414,10 +403,9 @@ public class PDFCardServiceImpl implements PDFCardService {
 	 * @throws ParseException
 	 */
 	@SuppressWarnings("unchecked")
-	private void setTemplateAttributes(String jsonString, Map<String, Object> attribute)
+	private void setTemplateAttributes(org.json.JSONObject demographicIdentity, Map<String, Object> attribute)
 			throws Exception {
 		try {
-			JSONObject demographicIdentity = objectMapper.readValue(jsonString, JSONObject.class);
 			if (demographicIdentity == null)
 				throw new IdentityNotFoundException(DigitalCardServiceErrorCodes.IDENTITY_NOT_FOUND.getErrorCode(),DigitalCardServiceErrorCodes.IDENTITY_NOT_FOUND.getErrorMessage());
 
@@ -434,37 +422,36 @@ public class PDFCardServiceImpl implements PDFCardService {
 				String values = jsonObject.get(VALUE);
 				for (String value : values.split(",")) {
 					// Object object = demographicIdentity.get(value);
-					Object object = demographicIdentity.get(value);
+					Object object = demographicIdentity.has(value)?demographicIdentity.get(value):null;
 					if (object != null) {
 						try {
-						obj = new JSONParser().parse(object.toString());
+							obj = new JSONParser().parse(object.toString());
 						} catch (Exception e) {
 							obj = object;
 						}
-					
-					if (obj instanceof JSONArray) {
-						// JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
-						JsonValue[] jsonValues = Utility.mapJsonNodeToJavaObject(JsonValue.class, (JSONArray) obj);
-						for (JsonValue jsonValue : jsonValues) {
-							if (supportedLang.contains(jsonValue.getLanguage()))
-								attribute.put(value + "_" + jsonValue.getLanguage(), jsonValue.getValue());
-						}
 
-					} else if (object instanceof JSONObject) {
-						JSONObject json = (JSONObject) object;
-						attribute.put(value, (String) json.get(VALUE));
-					} else {
-						attribute.put(value, String.valueOf(object));
+						if (obj instanceof JSONArray) {
+							// JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
+							SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
+							for (SimpleType jsonValue : jsonValues) {
+								if (supportedLang.contains(jsonValue.getLanguage()))
+									attribute.put(value + "_" + jsonValue.getLanguage(), jsonValue.getValue());
+							}
+
+						} else if (object instanceof JSONObject) {
+							JSONObject json = (JSONObject) object;
+							attribute.put(value, (String) json.get(VALUE));
+						} else {
+							attribute.put(value, String.valueOf(object));
+						}
 					}
-				}
-					
+
 				}
 			}
+			} catch (JsonParseException | JsonMappingException | DigitalCardServiceException e) {
+				printLogger.error("Error while parsing Json file" ,e);
+			}
 
-		} catch (JsonParseException | JsonMappingException | DigitalCardServiceException e) {
-			printLogger.error("Error while parsing Json file" ,e);
-			throw e;
-		}
 	}
 
 	/**
@@ -501,7 +488,7 @@ public class PDFCardServiceImpl implements PDFCardService {
 			}
 			if (obj instanceof JSONArray) {
 				// JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
-				JsonValue[] jsonValues = Utility.mapJsonNodeToJavaObject(JsonValue.class, (JSONArray) obj);
+				SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
 				uinCardPd = uinCardPd.concat(getParameter(jsonValues, templateLang).substring(0,4));
 			} else if (object instanceof JSONObject) {
 				JSONObject json = (JSONObject) object;
@@ -522,7 +509,7 @@ public class PDFCardServiceImpl implements PDFCardService {
 	 *            the lang code
 	 * @return the parameter
 	 */
-	private String getParameter(JsonValue[] jsonValues, String langCode) {
+	private String getParameter(SimpleType[] jsonValues, String langCode) {
 
 		String parameter = null;
 		if (jsonValues != null) {
