@@ -6,7 +6,7 @@ import lombok.Data;
  * Instantiates a new json value.
  */
 @Data	
-public class JsonValue {
+public class SimpleType {
 
 	/** The language. */
 	private String language;
