@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -17,10 +18,10 @@ import java.util.List;
 @Repository
 public interface DigitalCardTransactionRepository extends BaseRepository<DigitalCardTransactionEntity, String> {
 
-    @Query("UPDATE DigitalCardTransactionEntity d SET d.statusCode = ?2, d.dataShareUrl = ?3 WHERE d.rid=?1")
+    @Query("UPDATE DigitalCardTransactionEntity d SET d.statusCode = ?2, d.dataShareUrl = ?3, d.updateDateTime = ?4, d.updatedBy =?5 WHERE d.rid=?1")
     @Modifying
     @Transactional
-    int updateTransactionDetails(String id, String status, String url);
+    int updateTransactionDetails(String id, String status, String url, LocalDateTime updatedDT,String updateBy);
 
     @Query("FROM DigitalCardTransactionEntity WHERE rid=?1")
     DigitalCardTransactionEntity findByRID(String rid);

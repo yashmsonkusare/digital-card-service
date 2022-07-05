@@ -43,6 +43,7 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -229,7 +230,6 @@ public class PDFCardServiceImpl implements PDFCardService {
 				InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
 				pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF,
 						password);
-
 			} else {
 			if (!isPhotoSet) {
 				printLogger.debug(DigitalCardServiceErrorCodes.APPLICANT_PHOTO_NOT_SET.name());
@@ -239,7 +239,7 @@ public class PDFCardServiceImpl implements PDFCardService {
 			byte[] textFileByte = createTextFile(decryptedJson.toString());
 			byteMap.put(UIN_TEXT_FILE, textFileByte);
 			boolean isQRcodeSet = setQrCode(decryptedJson.toString(), attributes,isPhotoSet);
-			rid=decryptedJson.get("id").toString();
+			rid=getRid(decryptedJson.get("id"));
 			if (!isQRcodeSet) {
 				printLogger.debug(DigitalCardServiceErrorCodes.QRCODE_NOT_SET.name());
 			}
@@ -252,6 +252,11 @@ public class PDFCardServiceImpl implements PDFCardService {
 			}
 
 			pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password);
+				/*InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(pdfbytes));
+				File pdfFile = new File("src/main/resources/"+rid+".pdf");
+				OutputStream os = new FileOutputStream(pdfFile);
+				os.write(pdfbytes);
+				os.close();*/
 		}
 			printStatusUpdate(requestId, pdfbytes, credentialType,rid);
 			isTransactionSuccessful = true;
@@ -279,6 +284,10 @@ public class PDFCardServiceImpl implements PDFCardService {
 		return byteMap;
 	}
 
+	private String getRid(Object id) {
+		String rid= id.toString().split("/credentials/")[1];
+		return rid;
+	}
 	/**
 	 * Creates the text file.
 	 *
@@ -538,7 +547,7 @@ public class PDFCardServiceImpl implements PDFCardService {
 		dataShareDto = dataShareUtil.getDataShare(data, policyId, partnerId);
 		CredentialStatusEvent creEvent = new CredentialStatusEvent();
 		LocalDateTime currentDtime = DateUtils.getUTCCurrentDateTime();
-		digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl());
+		digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl(),LocalDateTime.now(),Utility.getUser());
 		StatusEvent sEvent = new StatusEvent();
 		sEvent.setId(UUID.randomUUID().toString());
 		sEvent.setRequestId(requestId);
@@ -550,6 +559,7 @@ public class PDFCardServiceImpl implements PDFCardService {
 		creEvent.setTopic(topic);
 		creEvent.setEvent(sEvent);
 		webSubSubscriptionHelper.printStatusUpdateEvent(topic, creEvent);
+		printLogger.info("publish event for topic : {} and rid : {}",topic,rid);
 	}
 }
 	
