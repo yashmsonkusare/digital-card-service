@@ -86,7 +86,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 logger.info("Configured received credentials to be verified. Flag {}", verifyCredentialsFlag);
                 boolean verified =credentialsVerifier.verifyCredentials(decryptedCredential);
                 if (!verified) {
-                    logger.error("Received Credentials failed in verifiable credential verify method. So, the credentials will not be printed." +
+                    logger.error("Received Credentials failed in verifiable credential verify method. So, digital card is not getting generated." +
                             " Id: {}, Transaction Id: {}", eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId());
                     return false;
                 }
