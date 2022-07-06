@@ -13,5 +13,5 @@ public interface DigitalCardService {
 
     DigitalCardStatusResponseDto getDigitalCard(String rid);
 
-    boolean createDigitalCard(EventModel eventModel);
+    boolean initiateCredentialRequest(EventModel eventModel);
 }

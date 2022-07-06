@@ -6,7 +6,6 @@ import io.mosip.digitalcard.dto.Metadata;
 import io.mosip.digitalcard.dto.SecretKeyRequest;
 import io.mosip.digitalcard.dto.TokenRequestDTO;
 import io.mosip.digitalcard.exception.ApisResourceAccessException;
-import io.mosip.digitalcard.service.impl.UinCardGeneratorImpl;
 import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.util.DateUtils;
 import io.mosip.kernel.core.util.StringUtils;
@@ -61,7 +60,7 @@ public class RestClient {
     /** The Constant AUTHORIZATION. */
     private static final String AUTHORIZATION = "Authorization=";
 
-    private Logger logger = DigitalCardRepoLogger.getLogger(UinCardGeneratorImpl.class);
+    private Logger logger = DigitalCardRepoLogger.getLogger(RestClient.class);
 
 
     /**

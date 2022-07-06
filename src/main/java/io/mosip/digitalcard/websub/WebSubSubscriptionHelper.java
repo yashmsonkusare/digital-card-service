@@ -59,7 +59,7 @@ public class WebSubSubscriptionHelper {
 					"websub subscription error");
 		}
 	}
-	public void printStatusUpdateEvent(String topic, CredentialStatusEvent credentialStatusEvent) {
+	public void digitalCardStatusUpdateEvent(String topic, CredentialStatusEvent credentialStatusEvent) {
 		try {
 			HttpHeaders headers = new HttpHeaders();
 			pb.publishUpdate(topic, credentialStatusEvent, MediaType.APPLICATION_JSON_UTF8_VALUE, headers,

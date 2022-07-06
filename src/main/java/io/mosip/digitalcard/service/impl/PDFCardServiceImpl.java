@@ -3,15 +3,12 @@ package io.mosip.digitalcard.service.impl;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.mosip.biometrics.util.ConvertRequestDto;
 import io.mosip.biometrics.util.face.FaceDecoder;
-import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
-import io.mosip.digitalcard.constant.IdType;
-import io.mosip.digitalcard.constant.PDFGeneratorExceptionCodeConstant;
-import io.mosip.digitalcard.constant.UinCardType;
+import io.mosip.digitalcard.constant.*;
 import io.mosip.digitalcard.dto.DataShareDto;
+import io.mosip.digitalcard.dto.PDFSignatureRequestDto;
+import io.mosip.digitalcard.dto.SignatureResponseDto;
 import io.mosip.digitalcard.dto.SimpleType;
 import io.mosip.digitalcard.service.PDFCardService;
 import io.mosip.digitalcard.websub.CredentialStatusEvent;
@@ -21,20 +18,23 @@ import io.mosip.digitalcard.exception.DataShareException;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.exception.IdentityNotFoundException;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
-import io.mosip.digitalcard.service.UinCardGenerator;
 import io.mosip.digitalcard.util.*;
 import io.mosip.digitalcard.websub.WebSubSubscriptionHelper;
 import io.mosip.kernel.core.cbeffutil.spi.CbeffUtil;
+import io.mosip.kernel.core.exception.ServiceError;
+import io.mosip.kernel.core.http.RequestWrapper;
+import io.mosip.kernel.core.http.ResponseWrapper;
 import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.pdfgenerator.exception.PDFGeneratorException;
+import io.mosip.kernel.core.pdfgenerator.spi.PDFGenerator;
 import io.mosip.kernel.core.qrcodegenerator.exception.QrcodeGenerationException;
 import io.mosip.kernel.core.qrcodegenerator.spi.QrCodeGenerator;
 import io.mosip.kernel.core.util.DateUtils;
-import io.mosip.kernel.core.websub.model.EventModel;
 import io.mosip.kernel.qrcode.generator.zxing.constant.QrVersion;
 import io.mosip.vercred.CredentialsVerifier;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -43,20 +43,41 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.net.URI;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
 public class PDFCardServiceImpl implements PDFCardService {
 
-	@Value("${mosip.digitalcard.websub.publish.topic:CREDENTIAL_STATUS_UPDATE}")
-	private String topic;
+
+	/** The PDFServiceImpl logger. */
+	Logger logger = DigitalCardRepoLogger.getLogger(PDFCardServiceImpl.class);
+
+	private static final String DATETIME_PATTERN = "mosip.digitalcard.service.datetime.pattern";
+
+	/** The Constant FILE_SEPARATOR. */
+	public static final String FILE_SEPARATOR = File.separator;
+
+	/** The Constant VALUE. */
+	private static final String VALUE = "value";
+
+	/** The Constant FACE. */
+	private static final String FACE = "Face";
+
+	/** The Constant APPLICANT_PHOTO. */
+	private static final String APPLICANT_PHOTO = "ApplicantPhoto";
+
+	/** The Constant QRCODE. */
+	private static final String QRCODE = "QrCode";
+
+	/** The Constant UINCARDPASSWORD. */
+	private static final String UINCARDPASSWORD = "mosip.digitalcard.uincard.password";
 	
 	@Autowired
 	private WebSubSubscriptionHelper webSubSubscriptionHelper;
@@ -67,32 +88,9 @@ public class PDFCardServiceImpl implements PDFCardService {
 	@Autowired
 	private RestClient restApiClient;
 
-	/** The Constant FILE_SEPARATOR. */
-	public static final String FILE_SEPARATOR = File.separator;
-
-	/** The Constant VALUE. */
-	private static final String VALUE = "value";
-
-	@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
-	private String uinCardTemplate;
-
-	/** The Constant FACE. */
-	private static final String FACE = "Face";
-
-	/** The Constant UIN_TEXT_FILE. */
-	private static final String UIN_TEXT_FILE = "textFile";
-
-	/** The Constant APPLICANT_PHOTO. */
-	private static final String APPLICANT_PHOTO = "ApplicantPhoto";
-
-	/** The Constant QRCODE. */
-	private static final String QRCODE = "QrCode";
-
-	/** The Constant UINCARDPASSWORD. */
-	private static final String UINCARDPASSWORD = "mosip.digitalcard.uincard.password";
-
-	/** The print logger. */
-	Logger printLogger = DigitalCardRepoLogger.getLogger(PDFCardServiceImpl.class);
+	/** The pdf generator. */
+	@Autowired
+	private PDFGenerator pdfGenerator;
 
 	/** The template generator. */
 	@Autowired
@@ -104,10 +102,6 @@ public class PDFCardServiceImpl implements PDFCardService {
 
 	@Autowired
 	private EncryptionUtil encryptionUtil;
-
-	/** The uin card generator. */
-	@Autowired
-	private UinCardGenerator<byte[]> uinCardGenerator;
 
 	/** The qr code generator. */
 	@Autowired
@@ -124,6 +118,9 @@ public class PDFCardServiceImpl implements PDFCardService {
 	@Autowired
 	DigitalCardTransactionRepository digitalCardTransactionRepository;
 
+	@Value("${mosip.digitalcard.websub.publish.topic:CREDENTIAL_STATUS_UPDATE}")
+	private String topic;
+
 	@Autowired
 	private CredentialsVerifier credentialsVerifier;
 
@@ -139,11 +136,24 @@ public class PDFCardServiceImpl implements PDFCardService {
 	@Value("${mosip.supported-languages}")
 	private String supportedLang;
 
-	@Value("${mosip.digitalcard.verify.credentials.flag:true}")
-	private boolean verifyCredentialsFlag;
+	@Value("${mosip.print.service.uincard.lowerleftx}")
+	private int lowerLeftX;
 
-	@Value("${mosip.digitalcard.pdf.password.enable.flag:true}")
-	private boolean pdfPasswordFlag;
+	@Value("${mosip.print.service.uincard.lowerlefty}")
+	private int lowerLeftY;
+
+	@Value("${mosip.print.service.uincard.upperrightx}")
+	private int upperRightX;
+
+	@Value("${mosip.print.service.uincard.upperrighty}")
+	private int upperRightY;
+
+	@Value("${mosip.print.service.uincard.signature.reason}")
+	private String reason;
+
+	@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
+	private String uinCardTemplate;
+
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -152,64 +162,23 @@ public class PDFCardServiceImpl implements PDFCardService {
 	}
 
 
-	public boolean generateCard(EventModel eventModel) {
-		String credential = null;
-		boolean isPrinted = false;
-		String decryptedCredential=null;
-		try {
-			if (eventModel.getEvent().getDataShareUri() == null || eventModel.getEvent().getDataShareUri().isEmpty()) {
-				credential = eventModel.getEvent().getData().get("credential").toString();
-			} else {
-				String dataShareUrl = eventModel.getEvent().getDataShareUri();
-				URI dataShareUri = URI.create(dataShareUrl);
-				credential = restApiClient.getForObject(dataShareUrl, String.class);
-			}
-			String ecryptionPin = null;
-			//eventModel.getEvent().getData().get("protectionKey").toString();
-			decryptedCredential = encryptionUtil.decryptData(credential);
-			if (verifyCredentialsFlag){
-				printLogger.info("Configured received credentials to be verified. Flag {}", verifyCredentialsFlag);
-				boolean verified =credentialsVerifier.verifyCredentials(decryptedCredential);
-				if (!verified) {
-					printLogger.error("Received Credentials failed in verifiable credential verify method. So, the credentials will not be printed." +
-						" Id: {}, Transaction Id: {}", eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId());
-					return false;
-				}
-			}
-			Map proofMap = new HashMap<String, String>();
-			proofMap = (Map) eventModel.getEvent().getData().get("proof");
-			byte[] pdfbytes = getDocuments(decryptedCredential,
-					eventModel.getEvent().getData().get("credentialType").toString(), ecryptionPin,
-					eventModel.getEvent().getTransactionId(), "UIN", true).get("uinPdf");
-			isPrinted = true; 
-		}catch (Exception e){
-			printLogger.error(e.getMessage() , e);
-			isPrinted = false;
-		}
-		return isPrinted;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see io.mosip.print.service.PrintService#
-	 * getDocuments(io.mosip.registration.processor.core.constant.IdType,
-	 * java.lang.String, java.lang.String, boolean)
+	 * @see io.mosip.digitalcard.service.PDFService#
 	 */
-	private Map<String, byte[]> getDocuments(String credential, String credentialType, String encryptionPin,
+	public boolean generatePDFCard(String credential, String credentialType,
 			String requestId,
-			String cardType,
+			UinCardType cardType,
 			boolean isPasswordProtected) {
-		printLogger.debug("PrintServiceImpl::getDocuments()::entry");
-		String credentialSubject;
-		Map<String, byte[]> byteMap = new HashMap<>();
+		logger.debug("PDFServiceImpl::getDocuments()::entry");
+		boolean isGenerated=false;
 		String uin = null;
 		String rid=null;
 		String password = null;
 		boolean isPhotoSet=false;
 		String individualBio = null;
 		Map<String, Object> attributes = new LinkedHashMap<>();
-		boolean isTransactionSuccessful = false;
 		String template = uinCardTemplate;
 		byte[] pdfbytes = null;
 		try {
@@ -228,118 +197,48 @@ public class PDFCardServiceImpl implements PDFCardService {
 			if (credentialType.equalsIgnoreCase("qrcode")) {
 				boolean isQRcodeSet = setQrCode(decryptedJson.toString(), attributes,isPhotoSet);
 				InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
-				pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF,
+				pdfbytes = generateUinCard(uinArtifact, cardType,
 						password);
 			} else {
 			if (!isPhotoSet) {
-				printLogger.debug(DigitalCardServiceErrorCodes.APPLICANT_PHOTO_NOT_SET.name());
+				logger.debug(DigitalCardServiceErrorCodes.APPLICANT_PHOTO_NOT_SET.name());
 			}
 			setTemplateAttributes(decryptedJson, attributes);
 			attributes.put(IdType.UIN.toString(), uin);
-			byte[] textFileByte = createTextFile(decryptedJson.toString());
-			byteMap.put(UIN_TEXT_FILE, textFileByte);
 			boolean isQRcodeSet = setQrCode(decryptedJson.toString(), attributes,isPhotoSet);
 			rid=getRid(decryptedJson.get("id"));
 			if (!isQRcodeSet) {
-				printLogger.debug(DigitalCardServiceErrorCodes.QRCODE_NOT_SET.name());
+				logger.debug(DigitalCardServiceErrorCodes.QRCODE_NOT_SET.name());
 			}
 			// getting template and placing original valuespng
 			InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
 			if (uinArtifact == null) {
-				printLogger.error(DigitalCardServiceErrorCodes.TEM_PROCESSING_FAILURE.name());
+				logger.error(DigitalCardServiceErrorCodes.TEM_PROCESSING_FAILURE.name());
 				throw new DigitalCardServiceException(
 						DigitalCardServiceErrorCodes.TEM_PROCESSING_FAILURE.getErrorCode(),DigitalCardServiceErrorCodes.TEM_PROCESSING_FAILURE.getErrorMessage());
 			}
 
-			pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password);
-				/*InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(pdfbytes));
-				File pdfFile = new File("src/main/resources/"+rid+".pdf");
-				OutputStream os = new FileOutputStream(pdfFile);
-				os.write(pdfbytes);
-				os.close();*/
+			pdfbytes = generateUinCard(uinArtifact, cardType, password);
 		}
-			printStatusUpdate(requestId, pdfbytes, credentialType,rid);
-			isTransactionSuccessful = true;
-
+			digitalCardStatusUpdate(requestId, pdfbytes, credentialType,rid);
+			isGenerated=true;
 		}
 		catch (QrcodeGenerationException e) {
-
-			printLogger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.name() , e);
-			throw new PDFGeneratorException(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorCode(),
-					e.getErrorText());
-
+			isGenerated = false;
+			logger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage(), e);
 		}  catch (PDFGeneratorException e) {
-
-			printLogger.error(DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.name() ,e);
-			throw new PDFGeneratorException(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorCode(),
-					e.getErrorText());
-
+			isGenerated = false;
+			logger.error(DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getErrorMessage() ,e);
 		}catch (Exception ex) {
-			printLogger.error(ex.getMessage() ,ex);
-			throw new PDFGeneratorException(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorCode(),
-					ex.getMessage() ,ex);
-
+			logger.error(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage() ,ex);
 		}
-		printLogger.debug("PrintServiceImpl::getDocuments()::exit");
-		return byteMap;
+		logger.debug("PDFServiceImpl::getDocuments()::exit");
+		return isGenerated;
 	}
 
 	private String getRid(Object id) {
 		String rid= id.toString().split("/credentials/")[1];
 		return rid;
-	}
-	/**
-	 * Creates the text file.
-	 *
-	 * @param jsonString
-	 *            the attributes
-	 * @return the byte[]
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-	private byte[] createTextFile(String jsonString) throws Exception {
-
-		LinkedHashMap<String, String> printTextFileMap = new LinkedHashMap<>();
-		JSONObject demographicIdentity = objectMapper.readValue(jsonString, JSONObject.class);
-		if (demographicIdentity == null)
-			throw new IdentityNotFoundException(DigitalCardServiceErrorCodes.IDENTITY_NOT_FOUND.getErrorCode(),DigitalCardServiceErrorCodes.IDENTITY_NOT_FOUND.getErrorMessage());
-		String printTextFileJson = utility.getPrintTextFileJson(utility.getConfigServerFileStorageURL(),
-				utility.getPrintTextFile());
-		JSONObject printTextFileJsonObject = objectMapper.readValue(printTextFileJson, JSONObject.class);
-		Set<String> printTextFileJsonKeys = printTextFileJsonObject.keySet();
-		for (String key : printTextFileJsonKeys) {
-			String printTextFileJsonString = utility.getJSONValue(printTextFileJsonObject, key);
-			for (String value : printTextFileJsonString.split(",")) {
-				Object object = demographicIdentity.get(value);
-				if (object instanceof ArrayList) {
-					JSONArray node = utility.getJSONArray(demographicIdentity, value);
-					SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, node);
-					for (SimpleType jsonValue : jsonValues) {
-						/*
-						 * if (jsonValue.getLanguage().equals(primaryLang)) printTextFileMap.put(value +
-						 * "_" + primaryLang, jsonValue.getValue()); if
-						 * (jsonValue.getLanguage().equals(secondaryLang)) printTextFileMap.put(value +
-						 * "_" + secondaryLang, jsonValue.getValue());
-						 */
-						if (supportedLang.contains(jsonValue.getLanguage()))
-							printTextFileMap.put(value + "_" + jsonValue.getLanguage(), jsonValue.getValue());
-
-					}
-
-				} else if (object instanceof LinkedHashMap) {
-					JSONObject json = utility.getJSONObject(demographicIdentity, value);
-					printTextFileMap.put(value, (String) json.get(VALUE));
-				} else {
-					printTextFileMap.put(value, (String) object);
-
-				}
-			}
-
-		}
-
-		Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
-		String printTextFileString = gson.toJson(printTextFileMap);
-		return printTextFileString.getBytes();
 	}
 
 	/**
@@ -458,7 +357,7 @@ public class PDFCardServiceImpl implements PDFCardService {
 				}
 			}
 			} catch (JsonParseException | JsonMappingException | DigitalCardServiceException e) {
-				printLogger.error("Error while parsing Json file" ,e);
+				logger.error("Error while parsing Json file" ,e);
 			}
 
 	}
@@ -541,7 +440,52 @@ public class PDFCardServiceImpl implements PDFCardService {
 		return credentialSubject;
 	}
 
-	private void printStatusUpdate(String requestId, byte[] data, String credentialType, String rid)
+	private byte[] generateUinCard(InputStream in, UinCardType type, String password) {
+		logger.debug("UinCardGeneratorImpl::generateUinCard()::entry");
+		byte[] pdfSignatured=null;
+		ByteArrayOutputStream out = null;
+		try {
+			out = (ByteArrayOutputStream) pdfGenerator.generate(in);
+			PDFSignatureRequestDto request = new PDFSignatureRequestDto(lowerLeftX, lowerLeftY, upperRightX,
+					upperRightY, reason, 1, password);
+			request.setApplicationId("KERNEL");
+			request.setReferenceId("SIGN");
+			request.setData(Base64.encodeBase64String(out.toByteArray()));
+			DateTimeFormatter format = DateTimeFormatter.ofPattern(env.getProperty(DATETIME_PATTERN));
+			LocalDateTime localdatetime = LocalDateTime
+					.parse(DateUtils.getUTCCurrentDateTimeString(env.getProperty(DATETIME_PATTERN)), format);
+
+			request.setTimeStamp(DateUtils.getUTCCurrentDateTimeString());
+			RequestWrapper<PDFSignatureRequestDto> requestWrapper = new RequestWrapper<>();
+
+			requestWrapper.setRequest(request);
+			requestWrapper.setRequesttime(localdatetime);
+			ResponseWrapper<?> responseWrapper;
+			SignatureResponseDto signatureResponseDto;
+
+			responseWrapper= restApiClient.postApi(ApiName.PDFSIGN, null, "",""
+					, MediaType.APPLICATION_JSON,requestWrapper, ResponseWrapper.class);
+
+
+			if (responseWrapper.getErrors() != null && !responseWrapper.getErrors().isEmpty()) {
+				ServiceError error = responseWrapper.getErrors().get(0);
+				throw new DigitalCardServiceException(error.getMessage());
+			}
+			signatureResponseDto = objectMapper.readValue(objectMapper.writeValueAsString(responseWrapper.getResponse()),
+					SignatureResponseDto.class);
+
+			pdfSignatured = Base64.decodeBase64(signatureResponseDto.getData());
+
+		} catch (Exception e) {
+			logger.error(io.mosip.kernel.pdfgenerator.itext.constant.PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage(),e.getMessage()
+					+ ExceptionUtils.getStackTrace(e));
+		}
+		logger.debug("UinCardGeneratorImpl::generateUinCard()::exit");
+
+		return pdfSignatured;
+	}
+
+	private void digitalCardStatusUpdate(String requestId, byte[] data, String credentialType, String rid)
 			throws DataShareException, ApiNotAccessibleException, IOException, Exception {
 		DataShareDto dataShareDto = null;
 		dataShareDto = dataShareUtil.getDataShare(data, policyId, partnerId);
@@ -555,11 +499,11 @@ public class PDFCardServiceImpl implements PDFCardService {
 		sEvent.setUrl(dataShareDto.getUrl());
 		sEvent.setTimestamp(Timestamp.valueOf(currentDtime).toString());
 		creEvent.setPublishedOn(LocalDateTime.now().toString());
-		creEvent.setPublisher("PRINT_SERVICE");
+		creEvent.setPublisher("DIGITAL_CARD_SERVICE");
 		creEvent.setTopic(topic);
 		creEvent.setEvent(sEvent);
-		webSubSubscriptionHelper.printStatusUpdateEvent(topic, creEvent);
-		printLogger.info("publish event for topic : {} and rid : {}",topic,rid);
+		webSubSubscriptionHelper.digitalCardStatusUpdateEvent(topic, creEvent);
+		logger.info("publish event for topic : {} and rid : {}",topic,rid);
 	}
 }
 	

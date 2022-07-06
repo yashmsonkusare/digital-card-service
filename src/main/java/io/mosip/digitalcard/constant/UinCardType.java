@@ -8,10 +8,6 @@ package io.mosip.digitalcard.constant;
 public enum UinCardType {
 
 	/** The pdf. */
-	PDF,
-	/** The text. */
-	TEXT,
-	/** The image. */
-	IMAGE;
+	PDF;
 
 }
