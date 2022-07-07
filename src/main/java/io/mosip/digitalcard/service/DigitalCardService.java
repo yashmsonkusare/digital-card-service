@@ -9,7 +9,7 @@ import io.mosip.kernel.core.websub.model.EventModel;
  */
 
 public interface DigitalCardService {
-    boolean generateDigitalCard(EventModel eventModel);
+    boolean generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId);
 
     DigitalCardStatusResponseDto getDigitalCard(String rid);
 

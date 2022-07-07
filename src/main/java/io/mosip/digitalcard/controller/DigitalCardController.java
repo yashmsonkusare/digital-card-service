@@ -56,7 +56,9 @@ public class DigitalCardController {
     @PreAuthenticateContentAndVerifyIntent(secret = "${mosip.digitalcard.websub.secret}", callback = "/v1/digitalcard/credential/callback/notifyStatus", topic = "${mosip.digitalcard.generate.credential.websub.topic}")
     public ResponseEntity<?> credentialEvent(@RequestBody EventModel eventModel)  {
         logger.info("event recieved from websub id: {}, topic : {}",eventModel.getEvent().getId(),eventModel.getTopic());
-        boolean isGenerated=digitalCardServiceImpl.generateDigitalCard(eventModel);
+        boolean isGenerated=digitalCardServiceImpl.generateDigitalCard(eventModel.getEvent().getData().get("credential").toString(),
+                eventModel.getEvent().getData().get("credentialType").toString(),
+                eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId());
         logger.info("successfully gnerated the digitalcard : {}",isGenerated);
         return new ResponseEntity<>("request accepted.", HttpStatus.OK);
     }

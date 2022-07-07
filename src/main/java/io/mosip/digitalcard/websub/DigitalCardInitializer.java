@@ -47,20 +47,20 @@ public class DigitalCardInitializer implements ApplicationListener<ApplicationRe
 
 	private static final String ONAPPLICATIONEVENT = "onApplicationEvent";
 
-	private static final String DIGITALCARDINSTIALIZER = "DigitalCardInstializer";
+	private static final String DIGITALCARDINITIALIZER = "DigitalCardInitializer";
 
 	private static final Logger LOGGER = DigitalCardRepoLogger.getLogger(DigitalCardInitializer.class);
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
 		if (reSubscriptionDelaySecs > 0) {
-		LOGGER.info(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
+		LOGGER.info(Utility.getUser(), DIGITALCARDINITIALIZER, ONAPPLICATIONEVENT,
 				"Work around for web-sub notification issue after some time.");
 
 		scheduleRetrySubscriptions();
 		}
 		else {
-			LOGGER.info(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
+			LOGGER.info(Utility.getUser(), DIGITALCARDINITIALIZER, ONAPPLICATIONEVENT,
 					"Scheduling for re-subscription is Disabled as the re-subsctription delay value is: "
 							+ reSubscriptionDelaySecs);
 
@@ -68,7 +68,7 @@ public class DigitalCardInitializer implements ApplicationListener<ApplicationRe
 	}
 
 	private void scheduleRetrySubscriptions() {
-		LOGGER.info(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
+		LOGGER.info(Utility.getUser(), DIGITALCARDINITIALIZER, ONAPPLICATIONEVENT,
 				"Scheduling re-subscription every " + reSubscriptionDelaySecs + " seconds");
 
 
@@ -87,14 +87,14 @@ public class DigitalCardInitializer implements ApplicationListener<ApplicationRe
 
 	private boolean initSubsriptions() {
 		try {
-			LOGGER.info(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
+			LOGGER.info(Utility.getUser(), DIGITALCARDINITIALIZER, ONAPPLICATIONEVENT,
 					"Initializing subscriptions..");
 			webSubSubscriptionHelper.initSubsriptions(credentialTopic,credentialCallBackUrl);
 			webSubSubscriptionHelper.initSubsriptions(identityCreateTopic,identityCreateCallBackUrl);
 			webSubSubscriptionHelper.initSubsriptions(identityUpdateTopic,identityUpdateCallBackUrl);
 			return true;
 		} catch (Exception e) {
-			LOGGER.error(Utility.getUser(), DIGITALCARDINSTIALIZER, ONAPPLICATIONEVENT,
+			LOGGER.error(Utility.getUser(), DIGITALCARDINITIALIZER, ONAPPLICATIONEVENT,
 					"Initializing subscriptions failed: " + e.getMessage());
 			return false;
 		}
