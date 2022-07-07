@@ -40,7 +40,7 @@ public class WebSubSubscriptionHelper {
 
 	private static final Logger LOGGER = DigitalCardRepoLogger.getLogger(WebSubSubscriptionHelper.class);
 
-	public void initSubsriptions(String topic,String callBackUrl) {
+	public void initSubscriptions(String topic,String callBackUrl) {
 		LOGGER.info(Utility.getUser(), WEBSUBSUBSCRIPTIONHEPLER, INITSUBSCRIPTION,
 				"Initializing subscribptions for topic : "+topic);
 		subscribeForDigitalCardServiceEvents(topic,callBackUrl);
@@ -59,7 +59,7 @@ public class WebSubSubscriptionHelper {
 					"websub subscription error");
 		}
 	}
-	public void printStatusUpdateEvent(String topic, CredentialStatusEvent credentialStatusEvent) {
+	public void digitalCardStatusUpdateEvent(String topic, CredentialStatusEvent credentialStatusEvent) {
 		try {
 			HttpHeaders headers = new HttpHeaders();
 			pb.publishUpdate(topic, credentialStatusEvent, MediaType.APPLICATION_JSON_UTF8_VALUE, headers,

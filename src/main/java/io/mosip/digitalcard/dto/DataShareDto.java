@@ -2,12 +2,6 @@ package io.mosip.digitalcard.dto;
 
 import lombok.Data;
 
-
-
-/**
- * Instantiates a new data share.
- */
-
 /**
  * Instantiates a new data share.
  */

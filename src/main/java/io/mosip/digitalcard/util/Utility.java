@@ -3,16 +3,11 @@ package io.mosip.digitalcard.util;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.mosip.digitalcard.constant.ApiName;
-import io.mosip.digitalcard.dto.IdResponseDTO;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
-import io.mosip.kernel.core.exception.ExceptionUtils;
-import io.mosip.kernel.core.exception.ServiceError;
 import io.mosip.kernel.core.util.StringUtils;
 import lombok.Data;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -157,59 +152,6 @@ public class Utility {
             return "";
         }
     }
-    /**
-     * retrieving identity json ffrom id repo by UIN.
-     *
-     * @param uin the uin
-     * @return the JSON object
-     * @throws IOException                 Signals that an I/O exception has
-     *                                     occurred.
-     */
-    public JSONObject retrieveIdrepoJson(String uin)
-            throws Exception {
-
-        if (uin != null) {
-            logger.debug("Utilities::retrieveIdrepoJson()::entry");
-            List<String> pathSegments = new ArrayList<>();
-            pathSegments.add(uin);
-            IdResponseDTO idResponseDto;
-
-            idResponseDto = (IdResponseDTO) restClient.getApi(ApiName.IDREPOGETIDBYUIN, pathSegments, "", "",
-                    IdResponseDTO.class);
-            if (idResponseDto == null) {
-                logger.debug("Utilities::retrieveIdrepoJson()::exit idResponseDto is null");
-                return null;
-            }
-            if (!idResponseDto.getErrors().isEmpty()) {
-                List<ServiceError> error = idResponseDto.getErrors();
-                logger.error("Utilities::retrieveIdrepoJson():: error with error message " + error.get(0).getMessage());
-
-            }
-            String response = objectMapper.writeValueAsString(idResponseDto.getResponse().getIdentity());
-            logger.debug("Utilities::retrieveIdrepoJson():: IDREPOGETIDBYUIN GET service call ended Successfully");
-            try {
-                return (JSONObject) new JSONParser().parse(response);
-            } catch (org.json.simple.parser.ParseException e) {
-                logger.error(ExceptionUtils.getStackTrace(e));
-                throw new DigitalCardServiceException("Error while parsing string to JSONObject", e);
-            }
-
-        }
-        logger.debug("Utilities::retrieveIdrepoJson()::exit UIN is null");
-        return null;
-    }
-
-
-    public String getMappingJsonValue(String key) throws Exception {
-        JSONObject jsonObject = getMappingJsonObject();
-        Object obj = jsonObject.get(key);
-        if (obj instanceof LinkedHashMap) {
-            LinkedHashMap hm = (LinkedHashMap) obj;
-            return hm.get("value") != null ? hm.get("value").toString() : null;
-        }
-        return jsonObject.get(key) != null ? jsonObject.get(key).toString() : null;
-    }
-
 
     /**
      * Iterates the JSONArray and returns JSONObject for given index.
