@@ -101,7 +101,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
-    public boolean generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId) {
+    public void generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId) {
         boolean isGenerated = false;
         String decryptedCredential=null;
         String password=null;
@@ -118,7 +118,6 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 if (!verified) {
                     logger.error("Received Credentials failed in verifiable credential verify method. So, digital card is not getting generated." +
                             " Id: {}, Transaction Id: {}",eventId, transactionId);
-                    return false;
                 }
             }
             if (isPasswordProtected) {
@@ -128,9 +127,8 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,getRid(decryptedCredentialJson.get("id")));
         }catch (Exception e){
             logger.error(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage() , e);
-            isGenerated = false;
+            throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
         }
-        return isGenerated;
     }
 
     @Override
@@ -160,22 +158,19 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     }
 
     @Override
-    public boolean initiateCredentialRequest(EventModel eventModel) {
-        boolean isCreated=false;
+    public void initiateCredentialRequest(String rid,String ridHash) {
         String pdfByteString = null;
         CredentialRequestDto credentialRequestDto = new CredentialRequestDto();
         credentialRequestDto.setCredentialType(credentialType);
         credentialRequestDto.setIssuer(partnerId);
-        credentialRequestDto.setId(eventModel.getEvent().getData().get("registration_id").toString());
+        credentialRequestDto.setId(rid);
         try {
             CredentialResponse credentialResponse = credentialUtil.reqCredential(credentialRequestDto);
-            saveTransactionDetails(credentialResponse, eventModel.getEvent().getData().get("id_hash").toString());
-            isCreated=true;
+            saveTransactionDetails(credentialResponse, ridHash);
         } catch (DigitalCardServiceException e) {
-            isCreated=false;
             logger.error(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage(),e);
+            throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_CREATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_CREATED.getErrorMessage());
         }
-        return isCreated;
     }
 
 

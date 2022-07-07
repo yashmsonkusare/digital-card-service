@@ -59,8 +59,8 @@ public class SubscribeEvent implements ApplicationListener<ApplicationReadyEvent
 	private void initSubsriptions() {
 		LOGGER.info(Utility.getUser(), SUBSCIRBEEVENT, ONAPPLICATIONEVENT,
 				"Initializing subscribptions..");
-		webSubSubscriptionHelper.initSubsriptions(credentialTopic,credentialCallBackUrl);
-		webSubSubscriptionHelper.initSubsriptions(identityCreateTopic,identityCreateCallBackUrl);
-		webSubSubscriptionHelper.initSubsriptions(identityUpdateTopic,identityUpdateCallBackUrl);
+		webSubSubscriptionHelper.initSubscriptions(credentialTopic,credentialCallBackUrl);
+		webSubSubscriptionHelper.initSubscriptions(identityCreateTopic,identityCreateCallBackUrl);
+		webSubSubscriptionHelper.initSubscriptions(identityUpdateTopic,identityUpdateCallBackUrl);
 	}
 }

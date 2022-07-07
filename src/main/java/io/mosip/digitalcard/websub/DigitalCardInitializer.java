@@ -89,9 +89,9 @@ public class DigitalCardInitializer implements ApplicationListener<ApplicationRe
 		try {
 			LOGGER.info(Utility.getUser(), DIGITALCARDINITIALIZER, ONAPPLICATIONEVENT,
 					"Initializing subscriptions..");
-			webSubSubscriptionHelper.initSubsriptions(credentialTopic,credentialCallBackUrl);
-			webSubSubscriptionHelper.initSubsriptions(identityCreateTopic,identityCreateCallBackUrl);
-			webSubSubscriptionHelper.initSubsriptions(identityUpdateTopic,identityUpdateCallBackUrl);
+			webSubSubscriptionHelper.initSubscriptions(credentialTopic,credentialCallBackUrl);
+			webSubSubscriptionHelper.initSubscriptions(identityCreateTopic,identityCreateCallBackUrl);
+			webSubSubscriptionHelper.initSubscriptions(identityUpdateTopic,identityUpdateCallBackUrl);
 			return true;
 		} catch (Exception e) {
 			LOGGER.error(Utility.getUser(), DIGITALCARDINITIALIZER, ONAPPLICATIONEVENT,

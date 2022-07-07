@@ -40,7 +40,7 @@ public class WebSubSubscriptionHelper {
 
 	private static final Logger LOGGER = DigitalCardRepoLogger.getLogger(WebSubSubscriptionHelper.class);
 
-	public void initSubsriptions(String topic,String callBackUrl) {
+	public void initSubscriptions(String topic,String callBackUrl) {
 		LOGGER.info(Utility.getUser(), WEBSUBSUBSCRIPTIONHEPLER, INITSUBSCRIPTION,
 				"Initializing subscribptions for topic : "+topic);
 		subscribeForDigitalCardServiceEvents(topic,callBackUrl);

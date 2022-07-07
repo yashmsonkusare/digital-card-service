@@ -2,6 +2,7 @@ package io.mosip.digitalcard.controller;
 
 import io.mosip.digitalcard.dto.DataShareResponseDto;
 import io.mosip.digitalcard.dto.DigitalCardStatusResponseDto;
+import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.service.DigitalCardService;
 import io.mosip.digitalcard.util.DigitalCardRepoLogger;
 import io.mosip.kernel.core.http.ResponseWrapper;
@@ -36,8 +37,13 @@ public class DigitalCardController {
     @PreAuthenticateContentAndVerifyIntent(secret = "${mosip.digitalcard.websub.secret}", callback = "/v1/digitalcard/idCreateEventHandle/callback/notifyStatus", topic = "${mosip.digitalcard.generate.identity.create.websub.topic}")
     public ResponseEntity<?> handleIdentityCreateEvent(@RequestBody EventModel eventModel)  {
         logger.info("event recieved from websub id: {}, topic : {}",eventModel.getEvent().getId(),eventModel.getTopic());
-        boolean isInitiated=digitalCardServiceImpl.initiateCredentialRequest(eventModel);
-        logger.info("successfully initiate credential request the digitalcard : {}",isInitiated);
+        try {
+            digitalCardServiceImpl.initiateCredentialRequest(eventModel.getEvent().getData().get("registration_id").toString(),
+                    eventModel.getEvent().getData().get("id_hash").toString());
+            logger.info("successfully initiate credential request for digitalcard.");
+        }catch (Exception e){
+            logger.error("credential request initiation is failed.");
+        }
         return new ResponseEntity<>("request accepted.", HttpStatus.OK);
     }
 
@@ -46,8 +52,13 @@ public class DigitalCardController {
     @PreAuthenticateContentAndVerifyIntent(secret = "${mosip.digitalcard.websub.secret}", callback = "/v1/digitalcard/idUpdateEventHandle/callback/notifyStatus", topic = "${mosip.digitalcard.generate.identity.update.websub.topic}")
     public ResponseEntity<?> handleIdentityUpdateEvent(@RequestBody EventModel eventModel)  {
         logger.info("event recieved from websub id: {}, topic : {}",eventModel.getEvent().getId(),eventModel.getTopic());
-        boolean isInitiated=digitalCardServiceImpl.initiateCredentialRequest(eventModel);
-        logger.info("successfully initiate credential request the digitalcard : {}",isInitiated);
+        try {
+            digitalCardServiceImpl.initiateCredentialRequest(eventModel.getEvent().getData().get("registration_id").toString(),
+                    eventModel.getEvent().getData().get("id_hash").toString());
+            logger.info("successfully initiate credential request for digitalcard.");
+        }catch (Exception e){
+            logger.error("credential request initiation is failed.");
+        }
         return new ResponseEntity<>("request accepted.", HttpStatus.OK);
     }
 
@@ -56,10 +67,14 @@ public class DigitalCardController {
     @PreAuthenticateContentAndVerifyIntent(secret = "${mosip.digitalcard.websub.secret}", callback = "/v1/digitalcard/credential/callback/notifyStatus", topic = "${mosip.digitalcard.generate.credential.websub.topic}")
     public ResponseEntity<?> credentialEvent(@RequestBody EventModel eventModel)  {
         logger.info("event recieved from websub id: {}, topic : {}",eventModel.getEvent().getId(),eventModel.getTopic());
-        boolean isGenerated=digitalCardServiceImpl.generateDigitalCard(eventModel.getEvent().getData().get("credential").toString(),
-                eventModel.getEvent().getData().get("credentialType").toString(),
-                eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId());
-        logger.info("successfully gnerated the digitalcard : {}",isGenerated);
+        try {
+            digitalCardServiceImpl.generateDigitalCard(eventModel.getEvent().getData().get("credential").toString(),
+                    eventModel.getEvent().getData().get("credentialType").toString(),
+                    eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId());
+            logger.info("successfully gnerated the digitalcard.");
+        }catch (Exception e){
+            logger.error("digitalcard generation failed.");
+        }
         return new ResponseEntity<>("request accepted.", HttpStatus.OK);
     }
 
