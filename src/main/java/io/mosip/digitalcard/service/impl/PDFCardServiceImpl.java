@@ -69,9 +69,6 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	/** The Constant QRCODE. */
 	private static final String QRCODE = "QrCode";
 
-	/** The Constant UINCARDPASSWORD. */
-	private static final String UINCARDPASSWORD = "mosip.digitalcard.uincard.password";
-
 	@Autowired
 	private RestClient restApiClient;
 
@@ -143,13 +140,10 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	 * @see io.mosip.digitalcard.service.PDFService#
 	 */
 	public byte[] generateCard(org.json.JSONObject decryptedCredentialJson, String credentialType,
-							   String requestId,
-							   boolean isPasswordProtected) {
+							   String password) {
 		logger.debug("PDFServiceImpl::getDocuments()::entry");
 		boolean isGenerated=false;
 		String uin = null;
-		String rid=null;
-		String password = null;
 		boolean isPhotoSet=false;
 		String individualBio = null;
 		Map<String, Object> attributes = new LinkedHashMap<>();
@@ -163,9 +157,6 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 				attributes.put("isPhotoSet",isPhotoSet);
 			}
 			uin = decryptedCredentialJson.getString("UIN");
-			if (isPasswordProtected) {
-				password = getPassword(uin);
-			}
 			if (credentialType.equalsIgnoreCase("qrcode")) {
 				boolean isQRcodeSet = setQrCode(decryptedCredentialJson.toString(), attributes,isPhotoSet);
 				InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
@@ -187,7 +178,6 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 					throw new DigitalCardServiceException(
 							DigitalCardServiceErrorCodes.TEM_PROCESSING_FAILURE.getErrorCode(),DigitalCardServiceErrorCodes.TEM_PROCESSING_FAILURE.getErrorMessage());
 				}
-
 				pdfbytes = generateUinCard(uinArtifact, password);
 			}
 
@@ -323,76 +313,6 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 				logger.error("Error while parsing Json file" ,e);
 			}
 
-	}
-
-	/**
-	 * Gets the password.
-	 *
-	 * @param uin
-	 *            the uin
-	 * @return the password
-	 *             the id repo app exception
-	 * @throws NumberFormatException
-	 *             the number format exception
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-	private String getPassword(String uin) throws Exception {
-		JSONObject jsonObject = utility.retrieveIdrepoJson(uin);
-
-		String[] attributes = env.getProperty(UINCARDPASSWORD).split("\\|");
-		List<String> list = new ArrayList<>(Arrays.asList(attributes));
-
-		Iterator<String> it = list.iterator();
-		String uinCardPd = "";
-		Object obj=null;
-		while (it.hasNext()) {
-			String key = it.next().trim();
-
-			Object object = jsonObject.get(key);
-			if (object != null) {
-				try {
-					obj = new JSONParser().parse(object.toString());
-				} catch (Exception e) {
-					obj = object;
-				}
-			}
-			if (obj instanceof JSONArray) {
-				// JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
-				SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
-				uinCardPd = uinCardPd.concat(getParameter(jsonValues, templateLang).substring(0,4));
-			} else if (object instanceof JSONObject) {
-				JSONObject json = (JSONObject) object;
-				uinCardPd = uinCardPd.concat((String) json.get(VALUE));
-			} else {
-				uinCardPd = uinCardPd.concat((String) object.toString().substring(0,4));
-			}
-		}
-		return uinCardPd;
-	}
-
-	/**
-	 * Gets the parameter.
-	 *
-	 * @param jsonValues
-	 *            the json values
-	 * @param langCode
-	 *            the lang code
-	 * @return the parameter
-	 */
-	private String getParameter(SimpleType[] jsonValues, String langCode) {
-
-		String parameter = null;
-		if (jsonValues != null) {
-			for (int count = 0; count < jsonValues.length; count++) {
-				String lang = jsonValues[count].getLanguage();
-				if (langCode.contains(lang)) {
-					parameter = jsonValues[count].getValue();
-					break;
-				}
-			}
-		}
-		return parameter;
 	}
 
 	private byte[] generateUinCard(InputStream in, String password) {

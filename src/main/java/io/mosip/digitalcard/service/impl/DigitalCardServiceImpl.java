@@ -2,10 +2,7 @@ package io.mosip.digitalcard.service.impl;
 
 import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
 import io.mosip.digitalcard.controller.DigitalCardController;
-import io.mosip.digitalcard.dto.CredentialRequestDto;
-import io.mosip.digitalcard.dto.CredentialResponse;
-import io.mosip.digitalcard.dto.DataShareDto;
-import io.mosip.digitalcard.dto.DigitalCardStatusResponseDto;
+import io.mosip.digitalcard.dto.*;
 import io.mosip.digitalcard.entity.DigitalCardTransactionEntity;
 import io.mosip.digitalcard.exception.ApiNotAccessibleException;
 import io.mosip.digitalcard.exception.DataShareException;
@@ -22,6 +19,8 @@ import io.mosip.kernel.core.util.DateUtils;
 import io.mosip.kernel.core.websub.model.EventModel;
 import io.mosip.vercred.CredentialsVerifier;
 import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,7 +28,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * The DigitalCardServiceImpl.
@@ -66,6 +65,9 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     @Autowired
     DigitalCardTransactionRepository digitalCardTransactionRepository;
 
+    /** The Constant VALUE. */
+    private static final String VALUE = "value";
+
     @Value("${mosip.digitalcard.datashare.partner.id}")
     private String dataSharePartnerId;
 
@@ -79,7 +81,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     private boolean isInitiateFlag;
 
     @Value("${mosip.digitalcard.pdf.password.enable.flag:true}")
-    private boolean pdfPasswordFlag;
+    private boolean isPasswordProtected;
 
     @Value("${mosip.digitalcard.credential.request.partner.id}")
     private String partnerId;
@@ -90,12 +92,19 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     @Value("${mosip.digitalcard.websub.publish.topic:CREDENTIAL_STATUS_UPDATE}")
     private String topic;
 
+    @Value("${mosip.digitalcard.uincard.password}")
+    private String digitalCardPassword;
+
+    @Value("${mosip.template-language}")
+    private String templateLang;
+
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
     public boolean generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId) {
         boolean isGenerated = false;
         String decryptedCredential=null;
+        String password=null;
         try {
             if (dataShareUrl != null) {
                 credential = restClient.getForObject(dataShareUrl, String.class);
@@ -112,7 +121,10 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                     return false;
                 }
             }
-            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType, transactionId,pdfPasswordFlag);
+            if (isPasswordProtected) {
+                password = getPassword(decryptedCredentialJson);
+            }
+            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password);
             digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,getRid(decryptedCredentialJson.get("id")));
         }catch (Exception e){
             logger.error(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage() , e);
@@ -202,4 +214,68 @@ public class DigitalCardServiceImpl implements DigitalCardService {
         String rid= id.toString().split("/credentials/")[1];
         return rid;
     }
+    /**
+     * Gets the password.
+     *
+     * @param jsonObject
+     * @return
+     * @throws Exception
+     */
+    private String getPassword(JSONObject jsonObject) throws Exception {
+        String[] attributes = digitalCardPassword.split("\\|");
+        List<String> list = new ArrayList<>(Arrays.asList(attributes));
+
+        Iterator<String> it = list.iterator();
+        String uinCardPd = "";
+        Object obj=null;
+        while (it.hasNext()) {
+            String key = it.next().trim();
+
+            Object object = jsonObject.get(key);
+            if (object != null) {
+                try {
+                    obj = new JSONParser().parse(object.toString());
+                } catch (Exception e) {
+                    obj = object;
+                }
+            }
+            if (obj instanceof JSONArray) {
+                // JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
+                SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
+                uinCardPd = uinCardPd.concat(getParameter(jsonValues, templateLang).substring(0,4));
+            } else if (object instanceof org.json.simple.JSONObject) {
+                org.json.simple.JSONObject json = (org.json.simple.JSONObject) object;
+                uinCardPd = uinCardPd.concat((String) json.get(VALUE));
+            } else {
+                uinCardPd = uinCardPd.concat((String) object.toString().substring(0,4));
+            }
+        }
+        return uinCardPd;
+    }
+
+
+    /**
+     * Gets the parameter.
+     *
+     * @param jsonValues
+     *            the json values
+     * @param langCode
+     *            the lang code
+     * @return the parameter
+     */
+    private String getParameter(SimpleType[] jsonValues, String langCode) {
+
+        String parameter = null;
+        if (jsonValues != null) {
+            for (int count = 0; count < jsonValues.length; count++) {
+                String lang = jsonValues[count].getLanguage();
+                if (langCode.contains(lang)) {
+                    parameter = jsonValues[count].getValue();
+                    break;
+                }
+            }
+        }
+        return parameter;
+    }
+
 }

@@ -8,12 +8,11 @@ public interface CardGeneratorService {
 	/**
 	 * The PDFCardService
 	 *
-	 * @param credential
+	 * @param decryptedCredentialJson
 	 * @param credentialType
-	 * @param requestId
-	 * @param isPasswordProtected
+	 * @param password
 	 * @return
 	 */
-	public byte[] generateCard(JSONObject decryptedCredentialJson, String credentialType, String requestId, boolean isPasswordProtected);
+	public byte[] generateCard(JSONObject decryptedCredentialJson, String credentialType, String password);
 
 }
