@@ -1,7 +1,7 @@
 -- ---------------------------------------------------------------------------------------------------------
 -- Database Name: mosip_digitalcard
 -- Release Version 	: 1.1.5.6
--- Purpose    		: Database Alter scripts for the release for Master DB.       
+-- Purpose    		: Database Alter scripts for the release for Digitalcard DB.       
 -- Create By   		: Dhanendra Sahu
 -- Created Date		: Jul-2022
 --

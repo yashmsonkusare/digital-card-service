@@ -1,6 +1,6 @@
 ### -- ---------------------------------------------------------------------------------------------------------
 ### -- Script Name		: digitalcard Release DB deploy
-### -- Deploy Module 	: MOSIP Master
+### -- Deploy Module 	: MOSIP Digitalcard
 ### -- Purpose    		: To deploy Digitalcard Database alter scripts for the release.       
 ### -- Create By   		: Dhanendra
 ### -- Created Date		: 15-Jul-2022
