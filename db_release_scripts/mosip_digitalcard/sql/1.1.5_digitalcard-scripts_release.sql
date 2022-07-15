@@ -1,0 +1,16 @@
+-- ---------------------------------------------------------------------------------------------------------
+-- Database Name: mosip_digitalcard
+-- Release Version 	: 1.1.5.6
+-- Purpose    		: Database Alter scripts for the release for Master DB.       
+-- Create By   		: Dhanendra Sahu
+-- Created Date		: Jul-2022
+--
+-- Modified Date        Modified By         Comments / Remarks
+-- -----------------------------------------------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------------------------------------------
+
+\c mosip_digitalcard sysadmin
+
+
+\ir ../ddl/digitalcard_transaction.sql
