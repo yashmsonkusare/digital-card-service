@@ -118,6 +118,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 if (!verified) {
                     logger.error("Received Credentials failed in verifiable credential verify method. So, digital card is not getting generated." +
                             " Id: {}, Transaction Id: {}",eventId, transactionId);
+                    throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
                 }
             }
             if (isPasswordProtected) {
