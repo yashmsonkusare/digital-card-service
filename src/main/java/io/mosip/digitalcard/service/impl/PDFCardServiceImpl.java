@@ -291,14 +291,13 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 							obj = object;
 						}
 
-						if (obj instanceof JSONArray) {
+						if (obj instanceof JSONArray && !key.equalsIgnoreCase("bestTwoFingers")) {
 							// JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
 							SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
 							for (SimpleType jsonValue : jsonValues) {
 								if (supportedLang.contains(jsonValue.getLanguage()))
 									attribute.put(value + "_" + jsonValue.getLanguage(), jsonValue.getValue());
 							}
-
 						} else if (object instanceof JSONObject) {
 							JSONObject json = (JSONObject) object;
 							attribute.put(value, (String) json.get(VALUE));
