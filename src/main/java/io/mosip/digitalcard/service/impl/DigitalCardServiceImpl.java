@@ -5,6 +5,7 @@ import io.mosip.digitalcard.controller.DigitalCardController;
 import io.mosip.digitalcard.dto.*;
 import io.mosip.digitalcard.entity.DigitalCardTransactionEntity;
 import io.mosip.digitalcard.exception.ApiNotAccessibleException;
+import io.mosip.digitalcard.exception.DataNotFoundException;
 import io.mosip.digitalcard.exception.DataShareException;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
@@ -14,6 +15,7 @@ import io.mosip.digitalcard.util.*;
 import io.mosip.digitalcard.websub.CredentialStatusEvent;
 import io.mosip.digitalcard.websub.StatusEvent;
 import io.mosip.digitalcard.websub.WebSubSubscriptionHelper;
+import io.mosip.kernel.core.dataaccess.exception.DataAccessLayerException;
 import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.util.DateUtils;
 import io.mosip.kernel.core.websub.model.EventModel;
@@ -23,6 +25,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -143,8 +147,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 digitalCardStatusResponseDto.setStatusCode(digitalCardTransactionEntity.getStatusCode());
                 digitalCardStatusResponseDto.setUrl(digitalCardTransactionEntity.getDataShareUrl());
                 return digitalCardStatusResponseDto;
-            }
-            if(isInitiateFlag && digitalCardTransactionEntity==null) {
+            } else if(isInitiateFlag && digitalCardTransactionEntity==null) {
                 CredentialRequestDto credentialRequestDto=new CredentialRequestDto();
                 credentialRequestDto.setCredentialType(credentialType);
                 credentialRequestDto.setIssuer(partnerId);
@@ -153,7 +156,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 saveTransactionDetails(credentialResponse, null);
             }
             throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_CREATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_CREATED.getErrorMessage());
-        } catch (Exception e) {
+        } catch (DataNotFoundException | DataAccessException | DataAccessLayerException e) {
             throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
         }
     }
