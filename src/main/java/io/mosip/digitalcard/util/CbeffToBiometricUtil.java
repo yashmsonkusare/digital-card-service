@@ -2,10 +2,10 @@ package io.mosip.digitalcard.util;
 
 import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
 import io.mosip.digitalcard.exception.DataNotFoundException;
+import io.mosip.kernel.biometrics.constant.BiometricType;
+import io.mosip.kernel.biometrics.entities.BIR;
+import io.mosip.kernel.biometrics.spi.CbeffUtil;
 import io.mosip.kernel.cbeffutil.impl.CbeffImpl;
-import io.mosip.kernel.core.cbeffutil.jaxbclasses.BIRType;
-import io.mosip.kernel.core.cbeffutil.jaxbclasses.SingleType;
-import io.mosip.kernel.core.cbeffutil.spi.CbeffUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class CbeffToBiometricUtil {
 
 	/**
 	 * Instantiates biometric util
-	 * 
+	 *
 	 */
 	public CbeffToBiometricUtil(CbeffUtil cbeffutil) {
 
@@ -49,12 +49,12 @@ public class CbeffToBiometricUtil {
 		logger.debug("CbeffToBiometricUtil::getImageBytes()::entry");
 		byte[] photoBytes = null;
 		if (cbeffFileString != null) {
-			List<BIRType> bIRTypeList = null;
+			List<BIR> bIRTypeList = null;
 			try {
 				bIRTypeList = getBIRTypeList(cbeffFileString);
 				photoBytes = getPhotoByTypeAndSubType(bIRTypeList, type, subType);
 			} catch (Exception e) {
-				throw new DataNotFoundException(DigitalCardServiceErrorCodes.DATA_NOT_FOUND.getErrorCode(),DigitalCardServiceErrorCodes.DATA_NOT_FOUND.getErrorMessage());
+				 throw new DataNotFoundException(DigitalCardServiceErrorCodes.DATA_NOT_FOUND.getErrorCode(),DigitalCardServiceErrorCodes.DATA_NOT_FOUND.getErrorMessage());
 			}
 		}
 		logger.debug("CbeffToBiometricUtil::getImageBytes()::exit");
@@ -68,18 +68,18 @@ public class CbeffToBiometricUtil {
 	 * @param subType     the sub type
 	 * @return the photo by type and sub type
 	 */
-	private byte[] getPhotoByTypeAndSubType(List<BIRType> bIRList, String type, List<String> subType) {
+	private byte[] getPhotoByTypeAndSubType(List<BIR> bIRList, String type, List<String> subType) {
 		byte[] photoBytes = null;
-		for (BIRType bir : bIRList) {
-			if (bir.getBDBInfo() != null) {
-				List<SingleType> singleTypeList = bir.getBDBInfo().getType();
-				List<String> subTypeList = bir.getBDBInfo().getSubtype();
+		for (BIR bir : bIRList) {
+			if (bir.getBdbInfo() != null) {
+				List<BiometricType> singleTypeList = bir.getBdbInfo().getType();
+				List<String> subTypeList = bir.getBdbInfo().getSubtype();
 
 				boolean isType = isBiometricType(type, singleTypeList);
 				boolean isSubType = isSubType(subType, subTypeList);
 
 				if (isType && isSubType) {
-					photoBytes = bir.getBDB();
+					photoBytes = bir.getBdb();
 					break;
 				}
 			}
@@ -98,15 +98,16 @@ public class CbeffToBiometricUtil {
 		return subTypeList.equals(subType) ? Boolean.TRUE : Boolean.FALSE;
 	}
 
-	private boolean isBiometricType(String type, List<SingleType> biometricTypeList) {
+	private boolean isBiometricType(String type, List<BiometricType> biometricTypeList) {
 		boolean isType = false;
-		for (SingleType biometricType : biometricTypeList) {
+		for (BiometricType biometricType : biometricTypeList) {
 			if (biometricType.value().equalsIgnoreCase(type)) {
 				isType = true;
 			}
 		}
 		return isType;
 	}
+
 
 	/**
 	 * Gets the BIR type list.
@@ -116,7 +117,7 @@ public class CbeffToBiometricUtil {
 	 * @throws Exception the exception
 	 */
 
-	public List<BIRType> getBIRTypeList(String cbeffFileString) throws Exception {
+	public List<BIR> getBIRTypeList(String cbeffFileString) throws Exception {
 		return cbeffutil.getBIRDataFromXML(Base64.decodeBase64(cbeffFileString));
 	}
 
@@ -127,7 +128,7 @@ public class CbeffToBiometricUtil {
 	 * @return the BIR type list
 	 * @throws Exception the exception
 	 */
-	public List<BIRType> getBIRDataFromXML(byte[] xmlBytes) throws Exception {
+	public List<BIR> getBIRDataFromXML(byte[] xmlBytes) throws Exception {
 		return cbeffutil.getBIRDataFromXML(xmlBytes);
 	}
 }
