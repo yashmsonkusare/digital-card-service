@@ -32,27 +32,27 @@ CREATE TABLE digitalcard.digitalcard_transaction(
 -- ddl-end --
 COMMENT ON TABLE digitalcard.digitalcard_transaction IS 'DigitalCard: The DigitalCard share is a functional service that interacts with the ID Repository and collects the user attributes for printing';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.rid IS 'RID:  rid is registration id';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.rid IS 'RID:  rid is registration id';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.credential_id IS 'Credential Id: Credential id generated when distribute credential';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.credential_id IS 'Credential Id: Credential id generated when distribute credential';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.uin_salted_hash IS 'Request: Request json of credential request genrator';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.uin_salted_hash IS 'Request: Request json of credential request genrator';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.status_code IS 'Status Code: Contains status of request';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.status_code IS 'Status Code: Contains status of request';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.datashareurl IS 'Datashare URL: Credential data url';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.datashareurl IS 'Datashare URL: digitalcard data url';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.issuancedate IS 'Issuance Date: Credential issue date';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.issuancedate IS 'Issuance Date: Credential issue date';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.cr_by IS 'Created By : ID or name of the user who create / insert record';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.cr_by IS 'Created By : ID or name of the user who create / insert record';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.cr_dtimes IS 'Created DateTimestamp : Date and Timestamp when the record is created/inserted';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.cr_dtimes IS 'Created DateTimestamp : Date and Timestamp when the record is created/inserted';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.upd_by IS 'Updated By : ID or name of the user who update the record with new values';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.upd_by IS 'Updated By : ID or name of the user who update the record with new values';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.upd_dtimes IS 'Updated DateTimestamp : Date and Timestamp when any of the fields in the record is updated with new values.';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.upd_dtimes IS 'Updated DateTimestamp : Date and Timestamp when any of the fields in the record is updated with new values.';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.is_deleted IS 'IS_Deleted : Flag to mark whether the record is Soft deleted.';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.is_deleted IS 'IS_Deleted : Flag to mark whether the record is Soft deleted.';
 -- ddl-end --
-COMMENT ON COLUMN credential.credential_transaction.del_dtimes IS 'Deleted DateTimestamp : Date and Timestamp when the record is soft deleted with is_deleted=TRUE';
+COMMENT ON COLUMN digitalcard.digitalcard_transaction.del_dtimes IS 'Deleted DateTimestamp : Date and Timestamp when the record is soft deleted with is_deleted=TRUE';
 -- ddl-end --
