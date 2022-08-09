@@ -15,7 +15,7 @@ import io.mosip.digitalcard.exception.IdentityNotFoundException;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
 import io.mosip.digitalcard.util.*;
 import io.mosip.digitalcard.websub.WebSubSubscriptionHelper;
-import io.mosip.kernel.core.cbeffutil.spi.CbeffUtil;
+import io.mosip.kernel.biometrics.spi.CbeffUtil;
 import io.mosip.kernel.core.exception.ServiceError;
 import io.mosip.kernel.core.http.RequestWrapper;
 import io.mosip.kernel.core.http.ResponseWrapper;
