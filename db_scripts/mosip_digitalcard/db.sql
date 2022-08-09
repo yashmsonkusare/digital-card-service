@@ -6,12 +6,12 @@ CREATE DATABASE mosip_digitalcard
 	OWNER = postgres
 	TEMPLATE  = template0;
 
-COMMENT ON DATABASE mosip_digitalcard IS 'Masterdata related logs and the data is stored in this database';
+COMMENT ON DATABASE mosip_digitalcard IS 'digitalcard-service related logs and the data is stored in this database';
 
-\c mosip_master postgres
+\c mosip_digitalcard postgres
 
 DROP SCHEMA IF EXISTS digitalcard CASCADE;
 CREATE SCHEMA digitalcard;
 ALTER SCHEMA digitalcard OWNER TO postgres;
-ALTER DATABASE mosip_master SET search_path TO master,pg_catalog,public;
+ALTER DATABASE mosip_digitalcard SET search_path TO master,pg_catalog,public;
 
