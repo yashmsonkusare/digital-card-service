@@ -126,7 +126,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 }
             }
             if (isPasswordProtected) {
-                password = getPassword(decryptedCredentialJson);
+                password = getPassword(decryptedCredentialJson).toUpperCase();
             }
             byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password);
             digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,getRid(decryptedCredentialJson.get("id")));
