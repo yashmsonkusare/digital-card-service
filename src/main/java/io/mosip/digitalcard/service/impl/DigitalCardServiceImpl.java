@@ -244,7 +244,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 // JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
                 SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
                 String password=getParameter(jsonValues, templateLang);
-                if(password.length()<=4){
+                if(password.length()<4){
                     for(int i=password.length()+1;i<=4;i++){
                         password=password.concat(defaultPasswordChar);
                     }
@@ -255,7 +255,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 uinCardPd = uinCardPd.concat((String) json.get(VALUE));
             } else {
                 String password=(String) object.toString();
-                if(password.length()<=4){
+                if(password.length()<4){
                     for(int i=password.length()+1;i<=4;i++){
                         password=password.concat(defaultPasswordChar);
                     }
