@@ -254,7 +254,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     private String getFormattedPasswordAttribute(String password){
         if(password.length()==3){
-            return password=password.concat(password.substring(0));
+            return password=password.concat(password.substring(0,1));
         }else if(password.length()==2){
             return password=password.repeat(2);
         }else if(password.length()==1) {
