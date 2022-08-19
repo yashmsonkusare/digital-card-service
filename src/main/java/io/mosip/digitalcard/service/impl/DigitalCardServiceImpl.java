@@ -1,6 +1,9 @@
 package io.mosip.digitalcard.service.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
+import io.mosip.digitalcard.constant.PDFGeneratorExceptionCodeConstant;
 import io.mosip.digitalcard.controller.DigitalCardController;
 import io.mosip.digitalcard.dto.*;
 import io.mosip.digitalcard.entity.DigitalCardTransactionEntity;
@@ -17,6 +20,8 @@ import io.mosip.digitalcard.websub.StatusEvent;
 import io.mosip.digitalcard.websub.WebSubSubscriptionHelper;
 import io.mosip.kernel.core.dataaccess.exception.DataAccessLayerException;
 import io.mosip.kernel.core.logger.spi.Logger;
+import io.mosip.kernel.core.pdfgenerator.exception.PDFGeneratorException;
+import io.mosip.kernel.core.qrcodegenerator.exception.QrcodeGenerationException;
 import io.mosip.kernel.core.util.DateUtils;
 import io.mosip.vercred.CredentialsVerifier;
 import org.json.JSONObject;
@@ -120,17 +125,26 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 if (!verified) {
                     logger.error("Received Credentials failed in verifiable credential verify method. So, digital card is not getting generated." +
                             " Id: {}, Transaction Id: {}",eventId, transactionId);
-                    digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR","VC verification is failed.",LocalDateTime.now(),Utility.getUser());
+                    loginErrorDetails(rid,DigitalCardServiceErrorCodes.VC_VERIFICATION_FAILED.getError());
                     throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
                 }
             }
             if (isPasswordProtected) {
                 password = getPassword(decryptedCredentialJson).toUpperCase();
             }
-            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,rid);
+            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password);
             digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,rid);
-        }catch (Exception e){
-            digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR","Error while generating Digital Card",LocalDateTime.now(),Utility.getUser());
+        }catch (QrcodeGenerationException e) {
+            loginErrorDetails(rid,DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getError());
+            logger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage(), e);
+        } catch (PDFGeneratorException e) {
+            loginErrorDetails(rid,DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getError());
+            logger.error(DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getErrorMessage() ,e);
+        }catch (JsonParseException | JsonMappingException e) {
+            loginErrorDetails(rid,DigitalCardServiceErrorCodes.ATTRIBUTE_NOT_SET.getError());
+            logger.error(DigitalCardServiceErrorCodes.ATTRIBUTE_NOT_SET.getErrorMessage() ,e);
+        } catch (Exception e){
+            loginErrorDetails(rid, DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getError());
             logger.error(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage() , e);
             throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
         }
@@ -289,4 +303,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
         return parameter;
     }
 
+    public void loginErrorDetails(String rid, String errorMsg){
+        digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR",errorMsg,LocalDateTime.now(),Utility.getUser());
+    }
 }

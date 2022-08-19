@@ -139,7 +139,7 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	 * @see io.mosip.digitalcard.service.PDFService#
 	 */
 	public byte[] generateCard(org.json.JSONObject decryptedCredentialJson, String credentialType,
-							   String password,String rid) {
+							   String password) throws Exception {
 		logger.debug("PDFServiceImpl::getDocuments()::entry");
 		String uin = null;
 		boolean isPhotoSet=false;
@@ -180,17 +180,17 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 			}
 		}
 		catch (QrcodeGenerationException e) {
-			loginErrorDetails(rid,DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage());
 			logger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage(), e);
+			throw e;
 		}  catch (PDFGeneratorException e) {
-			loginErrorDetails(rid,DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getErrorMessage());
 			logger.error(DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getErrorMessage() ,e);
+			throw e;
 		}catch (JsonParseException | JsonMappingException e) {
-			loginErrorDetails(rid,DigitalCardServiceErrorCodes.ATTRIBUTE_NOT_SET.getErrorMessage());
 			logger.error(DigitalCardServiceErrorCodes.ATTRIBUTE_NOT_SET.getErrorMessage() ,e);
-		} catch (Exception ex) {
-			loginErrorDetails(rid,PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage());
-			logger.error(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage() ,ex);
+			throw e;
+		} catch (Exception e) {
+			logger.error(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage() ,e);
+			throw e;
 		}
 		logger.debug("PDFServiceImpl::getDocuments()::exit");
 		return pdfbytes;
@@ -361,8 +361,6 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 		return pdfSignatured;
 	}
 
-	public void loginErrorDetails(String rid, String errorMsg){
-		digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR",errorMsg,LocalDateTime.now(),Utility.getUser());
-	}
+
 }
 	
