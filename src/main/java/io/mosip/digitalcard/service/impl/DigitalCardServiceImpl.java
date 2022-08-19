@@ -100,9 +100,6 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     @Value("${mosip.template-language}")
     private String templateLang;
 
-    @Value("${mosip.digitalcard.uincard.default.password.value:*}")
-    private String defaultPasswordChar;
-
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
     public void generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId) {
@@ -123,6 +120,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 if (!verified) {
                     logger.error("Received Credentials failed in verifiable credential verify method. So, digital card is not getting generated." +
                             " Id: {}, Transaction Id: {}",eventId, transactionId);
+                    digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR","VC verification is failed.",LocalDateTime.now(),Utility.getUser());
                     throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
                 }
             }
@@ -243,27 +241,27 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             if (obj instanceof JSONArray) {
                 // JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
                 SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
-                String password=getParameter(jsonValues, templateLang);
-                if(password.length()<4){
-                    for(int i=password.length()+1;i<=4;i++){
-                        password=password.concat(defaultPasswordChar);
-                    }
-                }
-                uinCardPd = uinCardPd.concat(password.substring(0,4));
+                uinCardPd = uinCardPd.concat(getFormattedPasswordAttribute(getParameter(jsonValues, templateLang)).substring(0,4));
             } else if (object instanceof org.json.simple.JSONObject) {
                 org.json.simple.JSONObject json = (org.json.simple.JSONObject) object;
                 uinCardPd = uinCardPd.concat((String) json.get(VALUE));
             } else {
-                String password=(String) object.toString();
-                if(password.length()<4){
-                    for(int i=password.length()+1;i<=4;i++){
-                        password=password.concat(defaultPasswordChar);
-                    }
-                }
-                uinCardPd = uinCardPd.concat(password.substring(0,4));
+                uinCardPd = uinCardPd.concat(getFormattedPasswordAttribute((String) object.toString()).substring(0,4));
             }
         }
         return uinCardPd;
+    }
+
+    private String getFormattedPasswordAttribute(String password){
+        if(password.length()==3){
+            return password=password.concat(password.substring(0));
+        }else if(password.length()==2){
+            return password=password.repeat(2);
+        }else if(password.length()==1) {
+            return password=password.repeat(4);
+        }else {
+            return password;
+        }
     }
 
 
