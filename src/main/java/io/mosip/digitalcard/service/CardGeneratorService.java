@@ -13,6 +13,6 @@ public interface CardGeneratorService {
 	 * @param password
 	 * @return
 	 */
-	public byte[] generateCard(JSONObject decryptedCredentialJson, String credentialType, String password);
+	public byte[] generateCard(JSONObject decryptedCredentialJson, String credentialType, String password,String rid);
 
 }

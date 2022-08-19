@@ -126,7 +126,6 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
 	private String uinCardTemplate;
 
-
 	@Autowired
 	private ObjectMapper objectMapper;
 
@@ -140,9 +139,8 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	 * @see io.mosip.digitalcard.service.PDFService#
 	 */
 	public byte[] generateCard(org.json.JSONObject decryptedCredentialJson, String credentialType,
-							   String password) {
+							   String password,String rid) {
 		logger.debug("PDFServiceImpl::getDocuments()::entry");
-		boolean isGenerated=false;
 		String uin = null;
 		boolean isPhotoSet=false;
 		String individualBio = null;
@@ -180,14 +178,18 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 				}
 				pdfbytes = generateUinCard(uinArtifact, password);
 			}
-
 		}
-
 		catch (QrcodeGenerationException e) {
+			loginErrorDetails(rid,DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage());
 			logger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage(), e);
 		}  catch (PDFGeneratorException e) {
+			loginErrorDetails(rid,DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getErrorMessage());
 			logger.error(DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getErrorMessage() ,e);
-		}catch (Exception ex) {
+		}catch (JsonParseException | JsonMappingException e) {
+			loginErrorDetails(rid,DigitalCardServiceErrorCodes.ATTRIBUTE_NOT_SET.getErrorMessage());
+			logger.error(DigitalCardServiceErrorCodes.ATTRIBUTE_NOT_SET.getErrorMessage() ,e);
+		} catch (Exception ex) {
+			loginErrorDetails(rid,PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage());
 			logger.error(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage() ,ex);
 		}
 		logger.debug("PDFServiceImpl::getDocuments()::exit");
@@ -357,6 +359,10 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 		logger.debug("UinCardGeneratorImpl::generateUinCard()::exit");
 
 		return pdfSignatured;
+	}
+
+	public void loginErrorDetails(String rid, String errorMsg){
+		digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR",errorMsg,LocalDateTime.now(),Utility.getUser());
 	}
 }
 	

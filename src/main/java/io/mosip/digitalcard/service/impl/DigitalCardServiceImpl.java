@@ -18,7 +18,6 @@ import io.mosip.digitalcard.websub.WebSubSubscriptionHelper;
 import io.mosip.kernel.core.dataaccess.exception.DataAccessLayerException;
 import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.util.DateUtils;
-import io.mosip.kernel.core.websub.model.EventModel;
 import io.mosip.vercred.CredentialsVerifier;
 import org.json.JSONObject;
 import org.json.simple.JSONArray;
@@ -26,7 +25,6 @@ import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -102,20 +100,23 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     @Value("${mosip.template-language}")
     private String templateLang;
 
+    @Value("${mosip.digitalcard.uincard.default.password.value:*}")
+    private String defaultPasswordChar;
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
     public void generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId) {
-        boolean isGenerated = false;
         String decryptedCredential=null;
         String password=null;
+        String rid=null;
         try {
             if (dataShareUrl != null) {
                 credential = restClient.getForObject(dataShareUrl, String.class);
             }
             decryptedCredential = encryptionUtil.decryptData(credential);
-            JSONObject jsonObject = new org.json.JSONObject(decryptedCredential);
+            JSONObject jsonObject = new JSONObject(decryptedCredential);
             JSONObject decryptedCredentialJson = jsonObject.getJSONObject("credentialSubject");
+            rid=getRid(decryptedCredentialJson.get("id"));
             if (verifyCredentialsFlag){
                 logger.info("Configured received credentials to be verified. Flag {}", verifyCredentialsFlag);
                 boolean verified =credentialsVerifier.verifyCredentials(decryptedCredential);
@@ -128,9 +129,10 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             if (isPasswordProtected) {
                 password = getPassword(decryptedCredentialJson).toUpperCase();
             }
-            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password);
-            digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,getRid(decryptedCredentialJson.get("id")));
+            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,rid);
+            digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,rid);
         }catch (Exception e){
+            digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR","Error while generating Digital Card",LocalDateTime.now(),Utility.getUser());
             logger.error(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage() , e);
             throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
         }
@@ -241,12 +243,24 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             if (obj instanceof JSONArray) {
                 // JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
                 SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
-                uinCardPd = uinCardPd.concat(getParameter(jsonValues, templateLang).substring(0,4));
+                String password=getParameter(jsonValues, templateLang);
+                if(password.length()<=4){
+                    for(int i=password.length()+1;i<=4;i++){
+                        password=password.concat(defaultPasswordChar);
+                    }
+                }
+                uinCardPd = uinCardPd.concat(password.substring(0,4));
             } else if (object instanceof org.json.simple.JSONObject) {
                 org.json.simple.JSONObject json = (org.json.simple.JSONObject) object;
                 uinCardPd = uinCardPd.concat((String) json.get(VALUE));
             } else {
-                uinCardPd = uinCardPd.concat((String) object.toString().substring(0,4));
+                String password=(String) object.toString();
+                if(password.length()<=4){
+                    for(int i=password.length()+1;i<=4;i++){
+                        password=password.concat(defaultPasswordChar);
+                    }
+                }
+                uinCardPd = uinCardPd.concat(password.substring(0,4));
             }
         }
         return uinCardPd;

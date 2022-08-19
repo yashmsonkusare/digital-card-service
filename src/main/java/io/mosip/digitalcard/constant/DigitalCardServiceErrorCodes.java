@@ -58,6 +58,8 @@ public enum DigitalCardServiceErrorCodes {
 
 	QRCODE_NOT_SET( "DCS-024", "Error while setting qrCode for uin card"),
 
+	ATTRIBUTE_NOT_SET( "DCS-024", "Error while setting template attributes for uin card"),
+
 	TEM_PROCESSING_FAILURE("DCS-025", "The Processing of Template Failed "),
 
 	DIGITAL_CARD_NOT_GENERATED("DCS-026", "Error while generating PDF for Digital Card"),
