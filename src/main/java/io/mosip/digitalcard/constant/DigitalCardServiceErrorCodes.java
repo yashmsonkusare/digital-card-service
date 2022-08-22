@@ -62,7 +62,10 @@ public enum DigitalCardServiceErrorCodes {
 
 	DIGITAL_CARD_NOT_GENERATED("DCS-026", "Error while generating PDF for Digital Card"),
 
-	DIGITAL_CARD_NOT_CREATED("DCS-027", "Digital Card is not generated try after some time.");
+	DIGITAL_CARD_NOT_CREATED("DCS-027", "Digital Card is not generated try after some time."),
+	ATTRIBUTE_NOT_SET( "DCS-028", "Error while setting template attributes for uin card"),
+
+	VC_VERIFICATION_FAILED("DCS-028", "VC verification is failed.");
 
 
 	/** The error code. */
@@ -98,5 +101,14 @@ public enum DigitalCardServiceErrorCodes {
 	 */
 	public String getErrorMessage() {
 		return errorMessage;
+	}
+
+	/**
+	 * Gets the error code and error message.
+	 *
+	 * @return the error message
+	 */
+	public String getError() {
+		return errorCode+" "+errorMessage;
 	}
 }
