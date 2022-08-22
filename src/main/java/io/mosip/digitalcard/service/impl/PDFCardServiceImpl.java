@@ -126,7 +126,6 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
 	private String uinCardTemplate;
 
-
 	@Autowired
 	private ObjectMapper objectMapper;
 
@@ -140,9 +139,8 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	 * @see io.mosip.digitalcard.service.PDFService#
 	 */
 	public byte[] generateCard(org.json.JSONObject decryptedCredentialJson, String credentialType,
-							   String password) {
+							   String password) throws Exception {
 		logger.debug("PDFServiceImpl::getDocuments()::entry");
-		boolean isGenerated=false;
 		String uin = null;
 		boolean isPhotoSet=false;
 		String individualBio = null;
@@ -180,15 +178,19 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 				}
 				pdfbytes = generateUinCard(uinArtifact, password);
 			}
-
 		}
-
 		catch (QrcodeGenerationException e) {
 			logger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage(), e);
+			throw e;
 		}  catch (PDFGeneratorException e) {
 			logger.error(DigitalCardServiceErrorCodes.PDF_NOT_GENERATED.getErrorMessage() ,e);
-		}catch (Exception ex) {
-			logger.error(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage() ,ex);
+			throw e;
+		}catch (JsonParseException | JsonMappingException e) {
+			logger.error(DigitalCardServiceErrorCodes.ATTRIBUTE_NOT_SET.getErrorMessage() ,e);
+			throw e;
+		} catch (Exception e) {
+			logger.error(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorMessage() ,e);
+			throw e;
 		}
 		logger.debug("PDFServiceImpl::getDocuments()::exit");
 		return pdfbytes;
@@ -358,5 +360,7 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 
 		return pdfSignatured;
 	}
+
+
 }
 	
