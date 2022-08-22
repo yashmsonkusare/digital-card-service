@@ -61,13 +61,7 @@ public class Utility {
     @Value("${mosip.digitalcard.demographic.identity}")
     private String demographicIdentity;
 
-    /** The registration processor abis json. */
-    @Value("${mosip.digitalcard.print.textfile}")
-    private String printTextFile;
-
     private String mappingJsonString = null;
-
-    private String printTextFileJsonString = null;
 
     @PostConstruct
     private void loadRegProcessorIdentityJson() throws Exception {
@@ -80,13 +74,6 @@ public class Utility {
             regProcessorIdentityJson=restClient.getForObject(configServerFileStorageURL + identityJson, String.class);
         }
         return regProcessorIdentityJson;
-    }
-
-    public String getPrintTextFileJson(String configServerFileStorageURL, String uri) throws Exception {
-        if (StringUtils.isBlank(printTextFileJsonString)) {
-            printTextFileJsonString=restClient.getForObject(configServerFileStorageURL + uri, String.class);
-        }
-        return printTextFileJsonString;
     }
 
     public JSONObject getMappingJsonObject() throws Exception {
