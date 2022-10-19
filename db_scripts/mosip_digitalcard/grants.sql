@@ -1,5 +1,3 @@
-\c mosip_master 
-
 GRANT CONNECT
    ON DATABASE mosip_digitalcard
    TO digitalcarduser;
