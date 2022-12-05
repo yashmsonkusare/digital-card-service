@@ -14,7 +14,6 @@ import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.exception.IdentityNotFoundException;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
 import io.mosip.digitalcard.util.*;
-import io.mosip.digitalcard.websub.WebSubSubscriptionHelper;
 import io.mosip.kernel.biometrics.spi.CbeffUtil;
 import io.mosip.kernel.core.exception.ServiceError;
 import io.mosip.kernel.core.http.RequestWrapper;
@@ -126,6 +125,8 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
 	private String uinCardTemplate;
 
+	@Value("${mosip.digitalcard.vid.templateTypeCode:vid-card-type}")
+	private String vidCardTemplate;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -140,7 +141,7 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	 * @see io.mosip.digitalcard.service.PDFService#
 	 */
 	public byte[] generateCard(org.json.JSONObject decryptedCredentialJson, String credentialType,
-							   String password) throws Exception {
+							   String password, Map<String, Object> additionalAttribute) throws Exception {
 		logger.debug("PDFServiceImpl::getDocuments()::entry");
 		boolean isGenerated=false;
 		String uin = null;
@@ -166,6 +167,11 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 					logger.debug(DigitalCardServiceErrorCodes.APPLICANT_PHOTO_NOT_SET.name());
 				}
 				setTemplateAttributes(decryptedCredentialJson, attributes);
+				// putting additional attribute for vid card
+				if(additionalAttribute.containsKey("vidType")){
+					template=vidCardTemplate;
+					attributes.putAll(additionalAttribute);
+				}
 				attributes.put(IdType.UIN.toString(), uin);
 				boolean isQRcodeSet = setQrCode(decryptedCredentialJson.toString(), attributes,isPhotoSet);
 				if (!isQRcodeSet) {
@@ -199,6 +205,7 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 		logger.debug("PDFServiceImpl::getDocuments()::exit");
 		return pdfbytes;
 	}
+
 
 	/**
 	 * Sets the qr code.

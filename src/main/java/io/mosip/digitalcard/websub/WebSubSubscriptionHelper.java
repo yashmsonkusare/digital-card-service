@@ -14,12 +14,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 @Component
 public class WebSubSubscriptionHelper {
 
 	@Autowired
 	SubscriptionClient<SubscriptionChangeRequest, UnsubscriptionRequest, SubscriptionChangeResponse> sb;
+
+	@Autowired
+	private RestTemplate restTemplate;
 
 	@Value("${websub.hub.url}")
 	private String webSubHubUrl;

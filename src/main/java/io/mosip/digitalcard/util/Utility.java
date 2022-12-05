@@ -63,11 +63,10 @@ public class Utility {
 
     private String mappingJsonString = null;
 
-    @PostConstruct
-    private void loadRegProcessorIdentityJson() throws Exception {
+  /*  private void loadRegProcessorIdentityJson() throws Exception {
         regProcessorIdentityJson = restClient.getForObject(configServerFileStorageURL + identityJson, String.class);
         logger.info("loadRegProcessorIdentityJson completed successfully");
-    }
+    }*/
 
     public String getIdentityMappingJson(String configServerFileStorageURL, String identityJson) throws Exception {
         if (StringUtils.isBlank(regProcessorIdentityJson)) {

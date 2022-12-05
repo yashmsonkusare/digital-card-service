@@ -22,6 +22,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -56,6 +57,10 @@ public class RestClient {
     /** The environment. */
     @Autowired
     private Environment environment;
+
+    @Autowired
+    @Qualifier("selfTokenRestTemplate")
+    private RestTemplate restTemplate;
 
     /** The Constant AUTHORIZATION. */
     private static final String AUTHORIZATION = "Authorization=";
@@ -103,18 +108,9 @@ public class RestClient {
                     builder.queryParam(queryParamNameArr[i], queryParamValueArr[i]);
                 }
             }
-
-            RestTemplate restTemplate;
-
-            try {
-                restTemplate = getRestTemplate();
-                logger.info("RestApiClient::postApi()::entry uri : {}",apiHostIpPort);
-                result = (T) restTemplate.postForObject(builder.toUriString(), setRequestHeader(requestType, mediaType),
-                        responseClass);
-            } catch (KeyManagementException | NoSuchAlgorithmException |
-                     KeyStoreException | IOException e) {
-                throw new ApisResourceAccessException(e.getMessage());
-            }
+            logger.info("RestApiClient::postApi()::entry uri : {}",apiHostIpPort);
+            result = (T) restTemplate.postForObject(builder.toUriString(), setRequestHeader(requestType, mediaType),
+                    responseClass);
         }
         return result;
     }
@@ -161,10 +157,8 @@ public class RestClient {
 
             }
             uriComponents = builder.build(false).encode();
-            RestTemplate restTemplate;
 
             try {
-                restTemplate = getRestTemplate();
                 logger.info("RestApiClient::getApi()::entry uri : {}",apiHostIpPort);
                 result = (T) restTemplate
                         .exchange(uriComponents.toUri(), HttpMethod.GET, setRequestHeader(null, null), responseType)
@@ -190,11 +184,8 @@ public class RestClient {
                         Class<?> responseType) throws Exception {
 
             T result = null;
-            RestTemplate restTemplate;
-
             try {
                 logger.info("RestApiClient::getApi()::entry uri : {}",url);
-                restTemplate = getRestTemplate();
                 result = (T) restTemplate
                         .getForObject(url, responseType);
             } catch (Exception e) {
@@ -203,26 +194,6 @@ public class RestClient {
         return result;
     }
 
-    /**
-     * Gets the rest template.
-     *
-     * @return the rest template
-     * @throws KeyManagementException   the key management exception
-     * @throws NoSuchAlgorithmException the no such algorithm exception
-     * @throws KeyStoreException        the key store exception
-     */
-    public RestTemplate getRestTemplate() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
-        TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
-        SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy)
-                .build();
-        SSLConnectionSocketFactory csf = new SSLConnectionSocketFactory(sslContext);
-        CloseableHttpClient httpClient = HttpClients.custom().setSSLSocketFactory(csf).build();
-        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-        requestFactory.setHttpClient(httpClient);
-
-        return new RestTemplate(requestFactory);
-
-    }
 
     /**
      * Sets the request header.
@@ -233,11 +204,11 @@ public class RestClient {
      * @throws IOException Signals that an I/O exception has occurred.
      */
     @SuppressWarnings("unchecked")
-    private HttpEntity<Object> setRequestHeader(Object requestType, MediaType mediaType) throws IOException {
-        MultiValueMap<String, String> headers = new LinkedMultiValueMap<String, String>();
-        headers.add("Cookie", getToken());
+    private HttpEntity<Object> setRequestHeader(Object requestType, MediaType mediaType) {
+        MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+        String contentType="Content-Type";
         if (mediaType != null) {
-            headers.add("Content-Type", mediaType.toString());
+            headers.add(contentType, mediaType.toString());
         }
         if (requestType != null) {
             try {
@@ -246,78 +217,17 @@ public class RestClient {
                 Iterator<String> iterator = httpHeader.keySet().iterator();
                 while (iterator.hasNext()) {
                     String key = iterator.next();
-                    if (!(headers.containsKey("Content-Type") && key == "Content-Type"))
-                        headers.add(key, httpHeader.get(key).get(0));
+                    List<String> header=httpHeader.get(key);
+                    if ( !(headers.containsKey(contentType) && key.equalsIgnoreCase(contentType)) && null!=header && !header.isEmpty())
+                        headers.add(key,header.get(0));
                 }
-                return new HttpEntity<Object>(httpEntity.getBody(), headers);
+                return new HttpEntity<>(httpEntity.getBody(), headers);
             } catch (ClassCastException e) {
-                return new HttpEntity<Object>(requestType, headers);
+                return new HttpEntity<>(requestType, headers);
             }
         } else
-            return new HttpEntity<Object>(headers);
+            return new HttpEntity<>(headers);
     }
 
-    /**
-     * Gets the token.
-     *
-     * @return the token
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public String getToken() throws IOException {
-        String token = System.getProperty("token");
-        boolean isValid = false;
-        if (StringUtils.isNotEmpty(token)) {
 
-            isValid = TokenHandlerUtil.isValidBearerToken(token,
-                    environment.getProperty("digitalcard.token.request.issuerUrl"),
-                    environment.getProperty("digitalcard.token.request.clientId"));
-
-        }
-        if (!isValid) {
-            TokenRequestDTO<SecretKeyRequest> tokenRequestDTO = new TokenRequestDTO<SecretKeyRequest>();
-            tokenRequestDTO.setId(environment.getProperty("digitalcard.token.request.id"));
-            tokenRequestDTO.setMetadata(new Metadata());
-
-            tokenRequestDTO.setRequesttime(DateUtils.getUTCCurrentDateTimeString());
-            // tokenRequestDTO.setRequest(setPasswordRequestDTO());
-            tokenRequestDTO.setRequest(setSecretKeyRequestDTO());
-            tokenRequestDTO.setVersion(environment.getProperty("digitalcard.token.request.version"));
-
-            Gson gson = new Gson();
-            HttpClient httpClient = HttpClientBuilder.create().build();
-            // HttpPost post = new
-            // HttpPost(environment.getProperty("PASSWORDBASEDTOKENAPI"));
-            HttpPost post = new HttpPost(environment.getProperty("KEYBASEDTOKENAPI"));
-            try {
-                StringEntity postingString = new StringEntity(gson.toJson(tokenRequestDTO));
-                post.setEntity(postingString);
-                post.setHeader("Content-type", "application/json");
-                HttpResponse response = httpClient.execute(post);
-                org.apache.http.HttpEntity entity = response.getEntity();
-                String responseBody = EntityUtils.toString(entity, "UTF-8");
-                Header[] cookie = response.getHeaders("Set-Cookie");
-                if (cookie.length == 0)
-                    throw new IOException("cookie is empty. Could not generate new token.");
-                token = response.getHeaders("Set-Cookie")[0].getValue();
-                System.setProperty("token", token.substring(14, token.indexOf(';')));
-                return token.substring(0, token.indexOf(';'));
-            } catch (IOException e) {
-                throw e;
-            }
-        }
-        return AUTHORIZATION + token;
-    }
-
-    /**
-     * Sets the secret key request DTO.
-     *
-     * @return the secret key request
-     */
-    private SecretKeyRequest setSecretKeyRequestDTO() {
-        SecretKeyRequest request = new SecretKeyRequest();
-        request.setAppId(environment.getProperty("digitalcard.token.request.appid"));
-        request.setClientId(environment.getProperty("digitalcard.token.request.clientId"));
-        request.setSecretKey(environment.getProperty("digitalcard.token.request.secretKey"));
-        return request;
-    }
 }

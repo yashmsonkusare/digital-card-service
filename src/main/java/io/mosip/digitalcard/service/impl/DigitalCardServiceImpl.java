@@ -109,7 +109,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
-    public void generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId) {
+    public void generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId,Map<String,Object> additionalAttribute) {
         boolean isGenerated = false;
         String decryptedCredential=null;
         String password=null;
@@ -135,7 +135,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             if (isPasswordProtected) {
                 password = getPassword(decryptedCredentialJson);
             }
-            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password);
+            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,additionalAttribute);
             digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,rid);
         }catch (QrcodeGenerationException e) {
             loginErrorDetails(rid,DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getError());
