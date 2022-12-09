@@ -221,8 +221,9 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             digitalCardEntity.setDataShareUrl(dataShareDto.getUrl());
             digitalCardEntity.setStatusCode("AVAILABLE");
             digitalCardTransactionRepository.save(digitalCardEntity);
+        }else{
+            digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl(),LocalDateTime.now(),Utility.getUser());
         }
-        digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl(),LocalDateTime.now(),Utility.getUser());
         StatusEvent sEvent = new StatusEvent();
         sEvent.setId(UUID.randomUUID().toString());
         sEvent.setRequestId(requestId);
