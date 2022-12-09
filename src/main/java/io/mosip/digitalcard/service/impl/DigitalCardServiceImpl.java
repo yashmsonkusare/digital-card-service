@@ -212,6 +212,16 @@ public class DigitalCardServiceImpl implements DigitalCardService {
         dataShareDto = dataShareUtil.getDataShare(data, dataSharePolicyId, dataSharePartnerId);
         CredentialStatusEvent creEvent = new CredentialStatusEvent();
         LocalDateTime currentDtime = DateUtils.getUTCCurrentDateTime();
+        DigitalCardTransactionEntity digitalCardTransactionEntity=digitalCardTransactionRepository.findByRID(rid);
+        if(digitalCardTransactionEntity==null){
+            DigitalCardTransactionEntity digitalCardEntity=new DigitalCardTransactionEntity();
+            digitalCardEntity.setrid(rid);
+            digitalCardEntity.setCreateDateTime(LocalDateTime.now());
+            digitalCardEntity.setCreatedBy(Utility.getUser());
+            digitalCardEntity.setDataShareUrl(dataShareDto.getUrl());
+            digitalCardEntity.setStatusCode("AVAILABLE");
+            digitalCardTransactionRepository.save(digitalCardEntity);
+        }
         digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl(),LocalDateTime.now(),Utility.getUser());
         StatusEvent sEvent = new StatusEvent();
         sEvent.setId(UUID.randomUUID().toString());
