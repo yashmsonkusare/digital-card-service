@@ -109,7 +109,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
-    public void generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId) {
+    public void generateDigitalCard(String credential, String credentialType,String dataShareUrl,String eventId,String transactionId,Map<String,Object> additionalAttributes) {
         boolean isGenerated = false;
         String decryptedCredential=null;
         String password=null;
@@ -135,7 +135,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             if (isPasswordProtected) {
                 password = getPassword(decryptedCredentialJson);
             }
-            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password);
+            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,additionalAttributes);
             digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,rid);
         }catch (QrcodeGenerationException e) {
             loginErrorDetails(rid,DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getError());
@@ -212,7 +212,18 @@ public class DigitalCardServiceImpl implements DigitalCardService {
         dataShareDto = dataShareUtil.getDataShare(data, dataSharePolicyId, dataSharePartnerId);
         CredentialStatusEvent creEvent = new CredentialStatusEvent();
         LocalDateTime currentDtime = DateUtils.getUTCCurrentDateTime();
-        digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl(),LocalDateTime.now(),Utility.getUser());
+        DigitalCardTransactionEntity digitalCardTransactionEntity=digitalCardTransactionRepository.findByRID(rid);
+        if(digitalCardTransactionEntity==null){
+            DigitalCardTransactionEntity digitalCardEntity=new DigitalCardTransactionEntity();
+            digitalCardEntity.setrid(rid);
+            digitalCardEntity.setCreateDateTime(LocalDateTime.now());
+            digitalCardEntity.setCreatedBy(Utility.getUser());
+            digitalCardEntity.setDataShareUrl(dataShareDto.getUrl());
+            digitalCardEntity.setStatusCode("AVAILABLE");
+            digitalCardTransactionRepository.save(digitalCardEntity);
+        }else{
+            digitalCardTransactionRepository.updateTransactionDetails(rid,"AVAILABLE", dataShareDto.getUrl(),LocalDateTime.now(),Utility.getUser());
+        }
         StatusEvent sEvent = new StatusEvent();
         sEvent.setId(UUID.randomUUID().toString());
         sEvent.setRequestId(requestId);

@@ -1,5 +1,6 @@
 package io.mosip.digitalcard.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mosip.digitalcard.dto.DataShareResponseDto;
 import io.mosip.digitalcard.dto.DigitalCardStatusResponseDto;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
@@ -13,6 +14,7 @@ import io.mosip.kernel.websub.api.annotation.PreAuthenticateContentAndVerifyInte
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @Api(value = "This api generate Digital Card based on RID",tags = {"Digital Card"})
@@ -28,6 +32,9 @@ public class DigitalCardController {
 
     @Autowired
     DigitalCardService digitalCardServiceImpl;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
@@ -68,9 +75,14 @@ public class DigitalCardController {
     public ResponseEntity<?> credentialEvent(@RequestBody EventModel eventModel)  {
         logger.info("event recieved from websub id: {}, topic : {}",eventModel.getEvent().getId(),eventModel.getTopic());
         try {
+            Map<String, Object> additionalAttributes= new HashMap<>();
+            additionalAttributes.putAll(eventModel.getEvent().getData());
+            additionalAttributes.remove("credential");
+            additionalAttributes.remove("protectionKey");
+            additionalAttributes.remove("proof");
             digitalCardServiceImpl.generateDigitalCard(eventModel.getEvent().getData().get("credential").toString(),
                     eventModel.getEvent().getData().get("credentialType").toString(),
-                    eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId());
+                    eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId(),additionalAttributes);
             logger.info("successfully gnerated the digitalcard.");
         }catch (Exception e){
             logger.error("digitalcard generation failed.");
