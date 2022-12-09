@@ -22,9 +22,6 @@ public class WebSubSubscriptionHelper {
 	@Autowired
 	SubscriptionClient<SubscriptionChangeRequest, UnsubscriptionRequest, SubscriptionChangeResponse> sb;
 
-	@Autowired
-	private RestTemplate restTemplate;
-
 	@Value("${websub.hub.url}")
 	private String webSubHubUrl;
 

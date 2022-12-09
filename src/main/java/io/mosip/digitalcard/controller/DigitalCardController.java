@@ -75,14 +75,14 @@ public class DigitalCardController {
     public ResponseEntity<?> credentialEvent(@RequestBody EventModel eventModel)  {
         logger.info("event recieved from websub id: {}, topic : {}",eventModel.getEvent().getId(),eventModel.getTopic());
         try {
-            Map<String, Object> additionalAttribute= new HashMap<>();
-            additionalAttribute.putAll(eventModel.getEvent().getData());
-            additionalAttribute.remove("credential");
-            additionalAttribute.remove("protectionKey");
-            additionalAttribute.remove("proof");
+            Map<String, Object> additionalAttributes= new HashMap<>();
+            additionalAttributes.putAll(eventModel.getEvent().getData());
+            additionalAttributes.remove("credential");
+            additionalAttributes.remove("protectionKey");
+            additionalAttributes.remove("proof");
             digitalCardServiceImpl.generateDigitalCard(eventModel.getEvent().getData().get("credential").toString(),
                     eventModel.getEvent().getData().get("credentialType").toString(),
-                    eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId(),additionalAttribute);
+                    eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId(),additionalAttributes);
             logger.info("successfully gnerated the digitalcard.");
         }catch (Exception e){
             logger.error("digitalcard generation failed.");

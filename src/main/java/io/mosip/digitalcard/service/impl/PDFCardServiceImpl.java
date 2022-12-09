@@ -36,6 +36,7 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
@@ -141,7 +142,7 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	 * @see io.mosip.digitalcard.service.PDFService#
 	 */
 	public byte[] generateCard(org.json.JSONObject decryptedCredentialJson, String credentialType,
-							   String password, Map<String, Object> additionalAttribute) throws Exception {
+							   String password, Map<String, Object> additionalAttributes) throws Exception {
 		logger.debug("PDFServiceImpl::getDocuments()::entry");
 		boolean isGenerated=false;
 		String uin = null;
@@ -168,9 +169,9 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 				}
 				setTemplateAttributes(decryptedCredentialJson, attributes);
 				// putting additional attribute for vid card
-				if(additionalAttribute.containsKey("vidType")){
+				if(additionalAttributes.containsKey("cardFormat") && additionalAttributes.get("cardFormat").equals("vidCard")){
 					template=vidCardTemplate;
-					attributes.putAll(additionalAttribute);
+					attributes.putAll(additionalAttributes);
 				}
 				attributes.put(IdType.UIN.toString(), uin);
 				boolean isQRcodeSet = setQrCode(decryptedCredentialJson.toString(), attributes,isPhotoSet);

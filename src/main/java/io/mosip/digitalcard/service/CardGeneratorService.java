@@ -16,6 +16,6 @@ public interface CardGeneratorService {
 	 * @param additionalAttribute
 	 * @return
 	 */
-	public byte[] generateCard(JSONObject decryptedCredentialJson, String credentialType, String password, Map<String,Object> additionalAttribute) throws Exception;
+	public byte[] generateCard(JSONObject decryptedCredentialJson, String credentialType, String password, Map<String,Object> additionalAttributes) throws Exception;
 
 }

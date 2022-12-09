@@ -12,7 +12,7 @@ import java.util.Map;
  */
 
 public interface DigitalCardService {
-    void generateDigitalCard(String credential, String credentialType, String dataShareUrl, String eventId, String transactionId, Map<String,Object> additionalAttribute);
+    void generateDigitalCard(String credential, String credentialType, String dataShareUrl, String eventId, String transactionId, Map<String,Object> additionalAttributes);
 
     DigitalCardStatusResponseDto getDigitalCard(String rid);
 
