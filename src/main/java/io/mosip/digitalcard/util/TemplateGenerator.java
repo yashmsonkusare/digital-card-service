@@ -17,17 +17,17 @@ import org.apache.velocity.runtime.log.NullLogChute;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.apache.velocity.runtime.resource.loader.FileResourceLoader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Properties;
-
 /**
  * The Class TemplateGenerator.
  * 
@@ -58,11 +58,23 @@ public class TemplateGenerator {
 	@Autowired
 	private ObjectMapper mapper;
 
+	@Autowired
+	private Utility utility;
+
+	@Value("${mosip.digitalcard.service.template}")
+	private String templateFile;
+
+	private static String SEMICOLON = ";";
+	private static String COLON = ":";
+
+	@Autowired
+	private Environment environment;
+
+
 	/**
 	 * Gets the template.
 	 *
-	 * @param templateTypeCode
-	 *            the template type code
+	 *   the template type code
 	 * @param attributes
 	 *            the attributes
 	 * @param langCode
@@ -72,29 +84,16 @@ public class TemplateGenerator {
 	 *             Signals that an I/O exception has occurred.
 	 *             the apis resource access exception
 	 */
-	public InputStream getTemplate(String templateTypeCode, Map<String, Object> attributes, String langCode)
+	public InputStream getTemplate(String cardTemplate, Map<String, Object> attributes, String langCode)
 			throws Exception {
 
-		ResponseWrapper<?> responseWrapper;
-		TemplateResponseDto template;
+		//ResponseWrapper<?> responseWrapper;
+		//TemplateResponseDto template;
 		printLogger.debug("TemplateGenerator::getTemplate()::entry");
-
 		try {
-			List<String> pathSegments = new ArrayList<>();
-			pathSegments.add(langCode);
-			pathSegments.add(templateTypeCode);
-
-			responseWrapper = (ResponseWrapper<?>) restClient.getApi(ApiName.TEMPLATES, pathSegments, "", "",
-					ResponseWrapper.class);
-			template = mapper.readValue(mapper.writeValueAsString(responseWrapper.getResponse()),
-					TemplateResponseDto.class);
-
 			InputStream fileTextStream = null;
-			if (template != null) {
-				InputStream stream = new ByteArrayInputStream(
-						template.getTemplates().iterator().next().getFileText().getBytes());
-				fileTextStream = getTemplateManager().merge(stream, attributes);
-			}
+			InputStream stream = new ByteArrayInputStream(Base64.getDecoder().decode(environment.getProperty(cardTemplate)));
+			fileTextStream = getTemplateManager().merge(stream, attributes);
 			printLogger.debug("TemplateGenerator::getTemplate()::exit");
 			return fileTextStream;
 

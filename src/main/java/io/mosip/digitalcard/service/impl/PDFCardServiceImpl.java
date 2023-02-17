@@ -66,6 +66,8 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	/** The Constant APPLICANT_PHOTO. */
 	private static final String APPLICANT_PHOTO = "ApplicantPhoto";
 
+	private static final String TEMPLATE_TYPE_CODE = "templateTypeCode";
+
 	/** The Constant QRCODE. */
 	private static final String QRCODE = "QrCode";
 
@@ -123,7 +125,10 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 	@Value("${mosip.digitalcard.service.uincard.signature.reason}")
 	private String reason;
 
-	@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
+	/*@Value("${mosip.digitalcard.templateTypeCode:RPR_UIN_CARD_TEMPLATE}")
+	private String uinCardTemplate;*/
+
+	@Value("${mosip.digitalcard.uin.card.template:uin_card_template.html}")
 	private String uinCardTemplate;
 
 	@Value("${mosip.digitalcard.vid.templateTypeCode:vid-card-type}")
@@ -149,7 +154,7 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 		boolean isPhotoSet=false;
 		String individualBio = null;
 		Map<String, Object> attributes = new LinkedHashMap<>();
-		String template = uinCardTemplate;
+		String templateTypeCode = uinCardTemplate;
 		byte[] pdfbytes = null;
 		try {
 			if(decryptedCredentialJson.has("biometrics")){
@@ -159,9 +164,12 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 				attributes.put("isPhotoSet",isPhotoSet);
 			}
 			uin = decryptedCredentialJson.getString("UIN");
+			if(additionalAttributes.containsKey(TEMPLATE_TYPE_CODE)) {
+				templateTypeCode = additionalAttributes.get(TEMPLATE_TYPE_CODE).toString();
+			}
 			if (credentialType.equalsIgnoreCase("qrcode")) {
 				boolean isQRcodeSet = setQrCode(decryptedCredentialJson.toString(), attributes,isPhotoSet);
-				InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
+				InputStream uinArtifact = templateGenerator.getTemplate(templateTypeCode, attributes, templateLang);
 				pdfbytes = generateUinCard(uinArtifact, password);
 			} else {
 				if (!isPhotoSet) {
@@ -169,17 +177,13 @@ public class PDFCardServiceImpl implements CardGeneratorService {
 				}
 				setTemplateAttributes(decryptedCredentialJson, attributes);
 				// putting additional attribute for vid card
-				if(additionalAttributes.containsKey("cardFormat") && additionalAttributes.get("cardFormat").equals("vidCard")){
-					template=vidCardTemplate;
-					attributes.putAll(additionalAttributes);
-				}
 				attributes.put(IdType.UIN.toString(), uin);
 				boolean isQRcodeSet = setQrCode(decryptedCredentialJson.toString(), attributes,isPhotoSet);
 				if (!isQRcodeSet) {
 					logger.debug(DigitalCardServiceErrorCodes.QRCODE_NOT_SET.name());
 				}
 				// getting template and placing original valuespng
-				InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
+				InputStream uinArtifact = templateGenerator.getTemplate(templateTypeCode, attributes, templateLang);
 				if (uinArtifact == null) {
 					logger.error(DigitalCardServiceErrorCodes.TEM_PROCESSING_FAILURE.name());
 					throw new DigitalCardServiceException(
