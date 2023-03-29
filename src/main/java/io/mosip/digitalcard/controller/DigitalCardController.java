@@ -6,6 +6,7 @@ import io.mosip.digitalcard.dto.DigitalCardStatusResponseDto;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.service.DigitalCardService;
 import io.mosip.digitalcard.util.DigitalCardRepoLogger;
+import io.mosip.kernel.core.exception.ExceptionUtils;
 import io.mosip.kernel.core.http.ResponseWrapper;
 import io.mosip.kernel.core.logger.spi.Logger;
 import io.mosip.kernel.core.util.CryptoUtil;
@@ -16,6 +17,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,6 +37,9 @@ public class DigitalCardController {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private Environment environment;
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
@@ -85,7 +90,9 @@ public class DigitalCardController {
                     eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId(),additionalAttributes);
             logger.info("successfully gnerated the digitalcard.");
         }catch (Exception e){
-            logger.error("digitalcard generation failed.");
+            logger.error("Db User name-"+environment.getProperty("javax.persistence.jdbc.user"));
+            logger.error("digitalcard generation failed.\n" + ExceptionUtils.getStackTrace(e));
+
         }
         return new ResponseEntity<>("request accepted.", HttpStatus.OK);
     }
