@@ -85,7 +85,7 @@ public class DigitalCardController {
             additionalAttributes.remove("credential");
             additionalAttributes.remove("protectionKey");
             additionalAttributes.remove("proof");
-            digitalCardServiceImpl.generateDigitalCard(eventModel.getEvent().getData().get("credential").toString(),
+            digitalCardServiceImpl.generateDigitalCard(eventModel.getEvent().getData().containsKey("credential")?eventModel.getEvent().getData().get("credential").toString():null,
                     eventModel.getEvent().getData().get("credentialType").toString(),
                     eventModel.getEvent().getDataShareUri(), eventModel.getEvent().getId(), eventModel.getEvent().getTransactionId(),additionalAttributes);
             logger.info("successfully gnerated the digitalcard.");
