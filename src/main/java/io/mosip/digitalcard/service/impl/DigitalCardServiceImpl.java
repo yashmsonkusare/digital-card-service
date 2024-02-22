@@ -13,6 +13,8 @@ import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
 import io.mosip.digitalcard.service.DigitalCardService;
 import io.mosip.digitalcard.service.CardGeneratorService;
+import io.mosip.digitalcard.service.NotificatonService;
+import io.mosip.digitalcard.service.SunbirdVCIService;
 import io.mosip.digitalcard.util.*;
 import io.mosip.digitalcard.websub.CredentialStatusEvent;
 import io.mosip.digitalcard.websub.StatusEvent;
@@ -48,6 +50,9 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     @Autowired
     private CardGeneratorService pdfCardServiceImpl;
+
+    @Autowired
+    private SunbirdVCIService sunbirdVCIServiceImpl;
 
     @Autowired
     private CredentialUtil credentialUtil;
@@ -103,9 +108,17 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     @Value("${mosip.digitalcard.uincard.password}")
     private String digitalCardPassword;
 
+    @Value("${mosip.digitalcard.email.subject.template}")
+    private String emailSubTemplate;
+
+    @Value("${mosip.digitalcard.email.body.template}")
+    private String emailBodyTemplate;
+
     @Value("${mosip.template-language}")
     private String templateLang;
 
+    @Autowired
+    private NotificatonService notificatonService;
 
     Logger logger = DigitalCardRepoLogger.getLogger(DigitalCardController.class);
 
@@ -122,6 +135,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             JSONObject jsonObject = new org.json.JSONObject(decryptedCredential);
             JSONObject decryptedCredentialJson = jsonObject.getJSONObject("credentialSubject");
             rid=getRid(decryptedCredentialJson.get("id"));
+            additionalAttributes.put("RID",rid);
             if (verifyCredentialsFlag){
                 logger.info("Configured received credentials to be verified. Flag {}", verifyCredentialsFlag);
                 boolean verified =credentialsVerifier.verifyCredentials(decryptedCredential);
@@ -132,11 +146,15 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                     throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
                 }
             }
-            if (isPasswordProtected) {
+            pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,additionalAttributes);
+            sunbirdVCIServiceImpl.createRegistry(additionalAttributes);
+            notificatonService.sendNotication(additionalAttributes,emailSubTemplate,emailBodyTemplate);
+            /*if (isPasswordProtected) {
                 password = getPassword(decryptedCredentialJson);
             }
-            byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,additionalAttributes);
-            digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,rid);
+*/
+           // byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,additionalAttributes);
+            //digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,rid);
         }catch (QrcodeGenerationException e) {
             loginErrorDetails(rid,DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getError());
             logger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage(), e);

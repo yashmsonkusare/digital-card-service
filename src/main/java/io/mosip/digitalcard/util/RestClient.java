@@ -115,6 +115,33 @@ public class RestClient {
         return result;
     }
 
+    public <T> T postApi(String url, List<String> pathsegments, String queryParamName, String queryParamValue,
+                          MediaType mediaType, Object requestType, Class<?> responseClass) throws ApisResourceAccessException {
+        T result = null;
+        UriComponentsBuilder builder = null;
+        builder = UriComponentsBuilder.fromUriString(url);
+        if (!((pathsegments == null) || (pathsegments.isEmpty()))) {
+            for (String segment : pathsegments) {
+                if (!((segment == null) || (("").equals(segment)))) {
+                    builder.pathSegment(segment);
+                }
+            }
+
+        }
+        if (!((queryParamName == null) || (("").equals(queryParamName)))) {
+            String[] queryParamNameArr = queryParamName.split(",");
+            String[] queryParamValueArr = queryParamValue.split(",");
+
+            for (int i = 0; i < queryParamNameArr.length; i++) {
+                builder.queryParam(queryParamNameArr[i], queryParamValueArr[i]);
+            }
+        }
+        logger.info("RestApiClient::postApi()::entry uri : {}",url);
+        result = (T) restTemplate.postForObject(builder.toUriString(), setRequestHeader(requestType, mediaType),
+                responseClass);
+        return result;
+    }
+
     /**
      * Gets the api.
      *
