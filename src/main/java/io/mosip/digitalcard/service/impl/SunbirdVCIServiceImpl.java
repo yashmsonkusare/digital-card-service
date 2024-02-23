@@ -91,7 +91,7 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
                 searchPolicy(generatePolicyNumber(policyId));
             }
         }  catch (Exception e) {
-            logger.error("Error while searching policyNumber: {}",);
+            logger.error("Error while searching policyNumber: {}",policyNumber);
 
             throw new DigitalCardServiceException(e);
         }
