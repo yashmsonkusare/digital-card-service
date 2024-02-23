@@ -6,10 +6,7 @@ import io.mosip.digitalcard.constant.DigitalCardServiceErrorCodes;
 import io.mosip.digitalcard.controller.DigitalCardController;
 import io.mosip.digitalcard.dto.*;
 import io.mosip.digitalcard.entity.DigitalCardTransactionEntity;
-import io.mosip.digitalcard.exception.ApiNotAccessibleException;
-import io.mosip.digitalcard.exception.DataNotFoundException;
-import io.mosip.digitalcard.exception.DataShareException;
-import io.mosip.digitalcard.exception.DigitalCardServiceException;
+import io.mosip.digitalcard.exception.*;
 import io.mosip.digitalcard.repositories.DigitalCardTransactionRepository;
 import io.mosip.digitalcard.service.DigitalCardService;
 import io.mosip.digitalcard.service.CardGeneratorService;
@@ -29,6 +26,7 @@ import io.mosip.vercred.CredentialsVerifier;
 import org.json.JSONObject;
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
@@ -56,6 +54,9 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     @Autowired
     private CredentialUtil credentialUtil;
+
+    @Value("${mosip.supported-languages}")
+    private String supportedLang;
 
     @Autowired
     Utility utility;
@@ -95,6 +96,9 @@ public class DigitalCardServiceImpl implements DigitalCardService {
 
     @Value("${mosip.digitalcard.pdf.password.enable.flag:true}")
     private boolean isPasswordProtected;
+
+    @Value("${mosip.digitalcard.pdf.card.generation.enable.flag:true}")
+    private boolean isCardGeneration;
 
     @Value("${mosip.digitalcard.credential.request.partner.id}")
     private String partnerId;
@@ -146,15 +150,16 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                     throw new DigitalCardServiceException(DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorCode(),DigitalCardServiceErrorCodes.DIGITAL_CARD_NOT_GENERATED.getErrorMessage());
                 }
             }
-            pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,additionalAttributes);
+            setTemplateAttributes(decryptedCredentialJson,additionalAttributes);
             sunbirdVCIServiceImpl.createRegistry(additionalAttributes);
             notificatonService.sendNotication(additionalAttributes,emailSubTemplate,emailBodyTemplate);
-            /*if (isPasswordProtected) {
-                password = getPassword(decryptedCredentialJson);
+            if(isCardGeneration) {
+                if (isPasswordProtected) {
+                    password = getPassword(decryptedCredentialJson);
+                }
+                byte[] pdfBytes = pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType, password, additionalAttributes);
+                digitalCardStatusUpdate(transactionId, pdfBytes, credentialType, rid);
             }
-*/
-           // byte[] pdfBytes=pdfCardServiceImpl.generateCard(decryptedCredentialJson, credentialType,password,additionalAttributes);
-            //digitalCardStatusUpdate(transactionId,pdfBytes,credentialType,rid);
         }catch (QrcodeGenerationException e) {
             loginErrorDetails(rid,DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getError());
             logger.error(DigitalCardServiceErrorCodes.QRCODE_NOT_GENERATED.getErrorMessage(), e);
@@ -335,6 +340,65 @@ public class DigitalCardServiceImpl implements DigitalCardService {
     }
     public void loginErrorDetails(String rid, String errorMsg){
         digitalCardTransactionRepository.updateErrorTransactionDetails(rid,"ERROR",errorMsg,LocalDateTime.now(),Utility.getUser());
+    }
+
+    /**
+     * Gets the artifacts.
+     *
+     * @param attribute    the attribute
+     * @return the artifacts
+     * @throws IOException    Signals that an I/O exception has occurred.
+     * @throws ParseException
+     */
+    @SuppressWarnings("unchecked")
+    private void setTemplateAttributes(org.json.JSONObject demographicIdentity, Map<String, Object> attribute)
+            throws Exception {
+        try {
+            if (demographicIdentity == null)
+                throw new IdentityNotFoundException(DigitalCardServiceErrorCodes.IDENTITY_NOT_FOUND.getErrorCode(),DigitalCardServiceErrorCodes.IDENTITY_NOT_FOUND.getErrorMessage());
+
+            String mapperJsonString = utility.getIdentityMappingJson(utility.getConfigServerFileStorageURL(),
+                    utility.getIdentityJson());
+            org.json.simple.JSONObject mapperJson = utility.readValue(mapperJsonString, org.json.simple.JSONObject.class);
+            org.json.simple.JSONObject mapperIdentity = utility.getJSONObject(mapperJson,
+                    utility.getDemographicIdentity());
+
+            List<String> mapperJsonKeys = new ArrayList<>(mapperIdentity.keySet());
+            for (String key : mapperJsonKeys) {
+                LinkedHashMap<String, String> jsonObject = utility.getJSONValue(mapperIdentity, key);
+                Object obj = null;
+                String values = jsonObject.get(VALUE);
+                for (String value : values.split(",")) {
+                    // Object object = demographicIdentity.get(value);
+                    Object object = demographicIdentity.has(value)?demographicIdentity.get(value):null;
+                    if (object != null) {
+                        try {
+                            obj = new JSONParser().parse(object.toString());
+                        } catch (Exception e) {
+                            obj = object;
+                        }
+
+                        if (obj instanceof JSONArray && !key.equalsIgnoreCase("bestTwoFingers")) {
+                            // JSONArray node = JsonUtil.getJSONArray(demographicIdentity, value);
+                            SimpleType[] jsonValues = Utility.mapJsonNodeToJavaObject(SimpleType.class, (JSONArray) obj);
+                            for (SimpleType jsonValue : jsonValues) {
+                                if (supportedLang.contains(jsonValue.getLanguage()))
+                                    attribute.put(value + "_" + jsonValue.getLanguage(), jsonValue.getValue());
+                            }
+                        } else if (object instanceof org.json.simple.JSONObject) {
+                            org.json.simple.JSONObject json = (org.json.simple.JSONObject) object;
+                            attribute.put(value, (String) json.get(VALUE));
+                        } else {
+                            attribute.put(value, String.valueOf(object));
+                        }
+                    }
+
+                }
+            }
+        } catch (JsonParseException | JsonMappingException | DigitalCardServiceException e) {
+            logger.error("Error while parsing Json file" ,e);
+        }
+
     }
 
 }

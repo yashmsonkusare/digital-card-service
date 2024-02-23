@@ -51,8 +51,15 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
     @Value("${mosip.digitalcard.sunbird.vci.policy.issuedOn}")
     private String policyIssuedOn;
 
-    @Value("${mosip.digitalcard.sunbird.vci.policy.id}")
-    private String policyId;
+    @Value("${mosip.digitalcard.sunbird.vci.policy.id-prefix}")
+    private String policyIdPrefix;
+
+    @Value("${mosip.digitalcard.sunbird.vci.policy.search.max.count:15}")
+    private int maxCount;
+
+    @Value("${mosip.digitalcard.sunbird.vci.partner}")
+    private String partnerId;
+
     @Value("${mosip.digitalcard.sunbird.vci.request.benefits}")
     private List<String> sunbirdVciBenefits;
 
@@ -79,6 +86,7 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
 
         Map<String, Map<String, String>> filters=new HashMap<>();
         Map<String,String> filter=new HashMap<>();
+        int count=0;
         try {
             registrySearchRequestDto.setOffset(0);
             registrySearchRequestDto.setLimit(1);
@@ -87,12 +95,14 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
             registrySearchRequestDto.setFilters(filters);
             List<String> pathsegments = null;
             String response=restClient.postApi(searchRegistryURL,null,"","", MediaType.APPLICATION_JSON,registrySearchRequestDto,String.class);
-            if(response.contains("osid")){
-                searchPolicy(generatePolicyNumber(policyId));
+            while (count<=maxCount) {
+                if (!response.contains("osid")) {
+                    break;
+                }
+                count++;
             }
         }  catch (Exception e) {
-            logger.error("Error while searching policyNumber: {}",policyNumber);
-
+            logger.error("Error while searching : {}",policyNumber);
             throw new DigitalCardServiceException(e);
         }
         return policyNumber;
@@ -108,8 +118,8 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
         createInsuranceDto.setPolicyName(policyName);
         createInsuranceDto.setPolicyExpiresOn(policyExpiry);
         createInsuranceDto.setPolicyIssuedOn(policyIssuedOn);
-        createInsuranceDto.setPolicyNumber(searchPolicy(generatePolicyNumber(policyId)));
-        createInsuranceDto.setPsut(generatePsut((String) identity.get("RID"),null));
+        createInsuranceDto.setPolicyNumber(searchPolicy(generatePolicyNumber(policyIdPrefix)));
+        createInsuranceDto.setPsut(generatePsut((String) identity.get("RID"),partnerId));
     }
     public String formatGender(String gender){
         if(gender.equalsIgnoreCase("MLE")){
