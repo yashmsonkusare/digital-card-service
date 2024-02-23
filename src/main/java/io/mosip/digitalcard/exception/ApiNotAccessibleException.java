@@ -31,4 +31,8 @@ public class ApiNotAccessibleException extends BaseCheckedException {
     }
 
 
+	public ApiNotAccessibleException(String errorCode, String errorMessage) {
+		super(DigitalCardServiceErrorCodes.API_NOT_ACCESSIBLE_EXCEPTION.getErrorCode(),
+				DigitalCardServiceErrorCodes.API_NOT_ACCESSIBLE_EXCEPTION.getErrorMessage());
+	}
 }

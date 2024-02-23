@@ -10,6 +10,7 @@ import io.mosip.kernel.core.templatemanager.exception.TemplateParsingException;
 import io.mosip.kernel.core.templatemanager.exception.TemplateResourceNotFoundException;
 import io.mosip.kernel.core.templatemanager.spi.TemplateManager;
 import io.mosip.kernel.templatemanager.velocity.impl.TemplateManagerImpl;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
@@ -81,7 +82,7 @@ public class TemplateGenerator {
 	 *             Signals that an I/O exception has occurred.
 	 *             the apis resource access exception
 	 */
-	public InputStream getTemplate(String cardTemplate, Map<String, Object> attributes, String langCode)
+	public InputStream getTemplate(String cardTemplate, Map<String, Object> attributes)
 			throws Exception {
 
 		//ResponseWrapper<?> responseWrapper;
@@ -102,6 +103,40 @@ public class TemplateGenerator {
 					,e.getErrorText());
 		}
 	}
+
+	/**
+	 * Gets the template.
+	 *
+	 *   the template type code
+	 * @param attributes
+	 *            the attributes
+	 *            the lang code
+	 * @return the template
+	 * @throws Exception
+	 *             Signals that an I/O exception has occurred.
+	 *             the apis resource access exception
+	 */
+	public String getEmailContent(String template, Map<String, Object> attributes)
+			throws Exception {
+		printLogger.debug("TemplateGenerator::getTemplate()::entry");
+		try {
+			InputStream fileTextStream = null;
+			String mergeTemplate=null;
+			InputStream stream = new ByteArrayInputStream(Base64.getDecoder().decode(template));
+			fileTextStream = getTemplateManager().merge(stream, attributes);
+			mergeTemplate = IOUtils.toString(fileTextStream, StandardCharsets.UTF_8.name());
+			printLogger.debug("TemplateGenerator::getTemplate()::exit");
+			return mergeTemplate;
+
+		} catch (TemplateResourceNotFoundException | TemplateParsingException | TemplateMethodInvocationException e) {
+			printLogger.error(e.getMessage()
+					+ ExceptionUtils.getStackTrace(e));
+
+			throw new TemplateParsingException(e.getErrorCode()
+					,e.getErrorText());
+		}
+	}
+
 
 	/**
 	 * Gets the template manager.
