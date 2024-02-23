@@ -8,5 +8,5 @@ public interface SunbirdVCIService {
 
     public void createRegistry(Map<String,Object> identity);
 
-    public String searchPolicy(String policy);
+    String generatePolicyNumber(String policyIdPrefix);
 }

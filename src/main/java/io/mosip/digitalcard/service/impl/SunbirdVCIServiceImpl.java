@@ -1,20 +1,14 @@
 package io.mosip.digitalcard.service.impl;
 
-import io.mosip.digitalcard.constant.ApiName;
-import io.mosip.digitalcard.controller.DigitalCardController;
 import io.mosip.digitalcard.dto.CreateInsuranceDto;
-import io.mosip.digitalcard.dto.CredentialStatusResponse;
 import io.mosip.digitalcard.dto.RegistrySearchRequestDto;
 import io.mosip.digitalcard.exception.DigitalCardServiceException;
 import io.mosip.digitalcard.service.SunbirdVCIService;
 import io.mosip.digitalcard.util.DigitalCardRepoLogger;
 import io.mosip.digitalcard.util.RestClient;
 import io.mosip.digitalcard.util.TokenIDGenerator;
-import io.mosip.digitalcard.util.Utility;
-import io.mosip.kernel.core.http.ResponseWrapper;
 import io.mosip.kernel.core.logger.spi.Logger;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -22,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * The SunbirdVCIServiceImpl.
@@ -81,21 +74,23 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
     }
 
     @Override
-    public String searchPolicy(String policyNumber) {
-        RegistrySearchRequestDto registrySearchRequestDto=new RegistrySearchRequestDto();
-
-        Map<String, Map<String, String>> filters=new HashMap<>();
-        Map<String,String> filter=new HashMap<>();
+    public String generatePolicyNumber(String policyIdPrefix) {
         int count=0;
+        String policyNumber=null;
         try {
-            registrySearchRequestDto.setOffset(0);
-            registrySearchRequestDto.setLimit(1);
-            filter.put("eq",policyNumber);
-            filters.put("policyNumber",filter);
-            registrySearchRequestDto.setFilters(filters);
-            List<String> pathsegments = null;
-            String response=restClient.postApi(searchRegistryURL,null,"","", MediaType.APPLICATION_JSON,registrySearchRequestDto,String.class);
             while (count<=maxCount) {
+                Random rnd = new Random();
+                int number = rnd.nextInt(999999);
+                policyNumber = policyIdPrefix +String.format("%06d", number);
+                Map<String, Map<String, String>> filters=new HashMap<>();
+                Map<String,String> filter=new HashMap<>();
+                RegistrySearchRequestDto registrySearchRequestDto=new RegistrySearchRequestDto();
+                registrySearchRequestDto.setOffset(0);
+                registrySearchRequestDto.setLimit(1);
+                filter.put("eq",policyNumber);
+                filters.put("policyNumber",filter);
+                registrySearchRequestDto.setFilters(filters);
+                String response=restClient.postApi(searchRegistryURL,null,"","", MediaType.APPLICATION_JSON,registrySearchRequestDto,String.class);
                 if (!response.contains("osid")) {
                     break;
                 }
@@ -118,7 +113,7 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
         createInsuranceDto.setPolicyName(policyName);
         createInsuranceDto.setPolicyExpiresOn(policyExpiry);
         createInsuranceDto.setPolicyIssuedOn(policyIssuedOn);
-        createInsuranceDto.setPolicyNumber(searchPolicy(generatePolicyNumber(policyIdPrefix)));
+        createInsuranceDto.setPolicyNumber(generatePolicyNumber(policyIdPrefix));
         createInsuranceDto.setPsut(generatePsut((String) identity.get("RID"),partnerId));
     }
     public String formatGender(String gender){
@@ -135,11 +130,6 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
         java.util.Date date = new Date(dateOfBirth);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         return formatter.format(date);
-    }
-    private String generatePolicyNumber(String policyId){
-        Random rnd = new Random();
-        int number = rnd.nextInt(999999);
-        return policyId +String.format("%06d", number);
     }
 
    private String generatePsut(String individualId,String partnerId){
