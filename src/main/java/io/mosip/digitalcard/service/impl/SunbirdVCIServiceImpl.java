@@ -50,7 +50,7 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
     @Value("${mosip.digitalcard.sunbird.vci.policy.search.max.count:15}")
     private int maxCount;
 
-    @Value("${mosip.digitalcard.sunbird.vci.partner}")
+    @Value("${mosip.digitalcard.sunbird.vci.partner.id}")
     private String partnerId;
 
     @Value("${mosip.digitalcard.sunbird.vci.request.benefits}")
