@@ -47,8 +47,11 @@ public class EncryptionUtil {
 	@Autowired
 	private Environment env;
 
+	/*@Autowired
+	RestClient restClient;*/
+
 	@Autowired
-	RestClient restClient;
+	RestApiClient restApiClient;
 
 	@Autowired
 	private ObjectMapper mapper;
@@ -81,7 +84,7 @@ public class EncryptionUtil {
 
 			request.setRequest(cryptomanagerRequestDto);
 			cryptomanagerRequestDto.setTimeStamp(localdatetime);
-			String response = restClient.postApi(ApiName.CRYPTOMANAGER_DECRYPT, null, "", "", MediaType.APPLICATION_JSON,
+			String response = restApiClient.postApi(ApiName.CRYPTOMANAGER_DECRYPT, null, "", "", MediaType.APPLICATION_JSON,
 					request, String.class);
 
 			CryptomanagerResponseDto responseObject = mapper.readValue(response, CryptomanagerResponseDto.class);
