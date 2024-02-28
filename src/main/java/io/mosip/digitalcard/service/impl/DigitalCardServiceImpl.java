@@ -139,7 +139,7 @@ public class DigitalCardServiceImpl implements DigitalCardService {
             JSONObject jsonObject = new org.json.JSONObject(decryptedCredential);
             JSONObject decryptedCredentialJson = jsonObject.getJSONObject("credentialSubject");
             rid=getRid(decryptedCredentialJson.get("id"));
-            additionalAttributes.put("RID",rid);
+            additionalAttributes.put("UIN",decryptedCredentialJson.getString("UIN"));
             if (verifyCredentialsFlag){
                 logger.info("Configured received credentials to be verified. Flag {}", verifyCredentialsFlag);
                 boolean verified =credentialsVerifier.verifyCredentials(decryptedCredential);
