@@ -41,12 +41,6 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
     @Value("${mosip.digitalcard.sunbird.vci.policy.Name}")
     private String policyName;
 
-    @Value("${mosip.digitalcard.sunbird.vci.policy.expiry}")
-    private String policyExpiry;
-
-    @Value("${mosip.digitalcard.sunbird.vci.policy.issuedOn}")
-    private String policyIssuedOn;
-
     @Value("${mosip.digitalcard.sunbird.vci.policy.id-prefix}")
     private String policyIdPrefix;
 
