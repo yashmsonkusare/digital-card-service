@@ -66,9 +66,9 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
                 createIssuanceRequest(identity,createInsuranceDto);
                 String response=restClient.postApi(registryURL,null,"","", MediaType.APPLICATION_JSON,createInsuranceDto,String.class);
                 identity.put("policyNumber",createInsuranceDto.getPolicyNumber());
-                logger.info("Created Registry for RID: {}",identity.get("RID"));
+                logger.info("Created Registry for UIN: {}",identity.get("UIN"));
             }  catch (Exception e) {
-                logger.error("Failed Creating Registry for RID: {}",identity.get("RID"));
+                logger.error("Failed Creating Registry for UIN: {}",identity.get("UIN"));
                 throw new DigitalCardServiceException(e);
             }
     }
@@ -114,7 +114,7 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
         createInsuranceDto.setPolicyExpiresOn(policyExpiry);
         createInsuranceDto.setPolicyIssuedOn(policyIssuedOn);
         createInsuranceDto.setPolicyNumber(generatePolicyNumber(policyIdPrefix));
-        createInsuranceDto.setPsut(generatePsut((String) identity.get("RID"),partnerId));
+        createInsuranceDto.setPsut(generatePsut((String) identity.get("UIN"),partnerId));
     }
     public String formatGender(String gender){
         if(gender.equalsIgnoreCase("MLE")){
