@@ -39,7 +39,7 @@ public class NotificationUtil {
 	private String emailURL;
 
 	@Autowired
-	RestClient restUtil;
+	RestApiClient restApiClient;
 
 	@Autowired
 	private ObjectMapper mapper;
@@ -77,17 +77,17 @@ public class NotificationUtil {
 		log.info("In emailNotification method of NotificationUtil service emailResourseUrl:", emailURL);
 		NotificationResponseDto notifierResponse = new NotificationResponseDto();
 		try {
-			Map<String, Object> responseFromEmailAPI = restUtil.postApi(emailURL, null, "", "",
+			Map<String, Object> responseFromEmailAPI = restApiClient.postApi(emailURL, null, "", "",
 					MediaType.MULTIPART_FORM_DATA, httpEntity, Map.class);
 			notifierResponse = mapper.readValue(mapper.writeValueAsString(responseFromEmailAPI.get("response")),
 					NotificationResponseDto.class);
 			log.info("emailNotification sent status {}",notifierResponse.getStatus());
-		} catch (RestClientException | ApisResourceAccessException e) {
+		} catch (Exception e) {
 			log.error("Error occured while parsing the response of email notifier api.", e.getLocalizedMessage());
 			throw new ApiNotAccessibleException(DigitalCardServiceErrorCodes.API_NOT_ACCESSIBLE_EXCEPTION.getErrorCode(),
 					DigitalCardServiceErrorCodes.API_NOT_ACCESSIBLE_EXCEPTION.getErrorMessage());
 		}
-	}
+    }
 
 	private LocalDateTime getCurrentResponseTime() {
 		return DateUtils.getUTCCurrentDateTime();

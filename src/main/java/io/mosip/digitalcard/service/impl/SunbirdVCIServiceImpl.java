@@ -8,6 +8,7 @@ import io.mosip.digitalcard.util.DigitalCardRepoLogger;
 import io.mosip.digitalcard.util.RestClient;
 import io.mosip.digitalcard.util.TokenIDGenerator;
 import io.mosip.kernel.core.logger.spi.Logger;
+import io.mosip.kernel.core.util.DateUtils;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -58,6 +61,13 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
 
     @Value("${mosip.digitalcard.sunbird.vci.request.benefits}")
     private List<String> sunbirdVciBenefits;
+
+    @Value("${mosip.digitalcard.service.datetime.pattern}")
+    private String dateTimePattern;
+
+    @Value("${mosip.digitalcard.service.policy.expiry.days:365}")
+    private int policyExpiryDays;
+
 
     @Autowired
     RestClient restClient;
@@ -107,6 +117,10 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
     }
 
     private void createIssuanceRequest(Map<String,Object> identity,CreateInsuranceDto createInsuranceDto) throws JSONException {
+        DateTimeFormatter format = DateTimeFormatter.ofPattern(dateTimePattern);
+        LocalDateTime localdatetime = LocalDateTime
+                .parse(DateUtils.getUTCCurrentDateTimeString(dateTimePattern), format);
+
         createInsuranceDto.setFullName((String) identity.get("fullName_eng"));
         createInsuranceDto.setDob(convertDateOfBirth((String) identity.get("dateOfBirth")));
         createInsuranceDto.setEmail((String) identity.get("email"));
@@ -114,8 +128,8 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
         createInsuranceDto.setMobile((String) identity.get("phone"));
         createInsuranceDto.setBenefits(sunbirdVciBenefits);
         createInsuranceDto.setPolicyName(policyName);
-        createInsuranceDto.setPolicyExpiresOn(policyExpiry);
-        createInsuranceDto.setPolicyIssuedOn(policyIssuedOn);
+        createInsuranceDto.setPolicyExpiresOn(String.valueOf(localdatetime.plusDays(policyExpiryDays))+"Z");
+        createInsuranceDto.setPolicyIssuedOn(String.valueOf(localdatetime)+"Z");
         createInsuranceDto.setPolicyNumber(generatePolicyNumber(policyIdPrefix));
         createInsuranceDto.setPsut(generatePsut((String) identity.get("UIN"),partnerId));
     }

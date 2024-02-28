@@ -93,6 +93,39 @@ public class RestApiClient {
 		}
 		return result;
 	}
+	public <T> T postApi(String url, List<String> pathsegments, String queryParamName, String queryParamValue,
+						 MediaType mediaType, Object requestType, Class<?> responseClass) throws Exception {
+		T result = null;
+		RestTemplate restTemplate;
+		UriComponentsBuilder builder = null;
+		builder = UriComponentsBuilder.fromUriString(url);
+		if (!((pathsegments == null) || (pathsegments.isEmpty()))) {
+			for (String segment : pathsegments) {
+				if (!((segment == null) || (("").equals(segment)))) {
+					builder.pathSegment(segment);
+				}
+			}
+
+		}
+		if (!((queryParamName == null) || (("").equals(queryParamName)))) {
+			String[] queryParamNameArr = queryParamName.split(",");
+			String[] queryParamValueArr = queryParamValue.split(",");
+
+			for (int i = 0; i < queryParamNameArr.length; i++) {
+				builder.queryParam(queryParamNameArr[i], queryParamValueArr[i]);
+			}
+		}
+		logger.info("RestApiClient::postApi()::entry uri : {}",url);
+		try {
+		restTemplate = getRestTemplate();
+		result = (T) restTemplate.postForObject(builder.toUriString(), setRequestHeader(requestType, mediaType),
+				responseClass);
+		} catch (Exception e) {
+			logger.error( e.getMessage() + ExceptionUtils.getStackTrace(e));
+			throw e;
+		}
+		return result;
+	}
 
 	/**
 	 * Post api.
