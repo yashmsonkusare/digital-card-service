@@ -53,6 +53,9 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
     @Value("${mosip.digitalcard.sunbird.vci.partner.id}")
     private String partnerId;
 
+    @Value("${mosip.digitalcard.sunbird.auth.partner.id}")
+    private String authpartnerId;
+
     @Value("${mosip.digitalcard.sunbird.vci.request.benefits}")
     private List<String> sunbirdVciBenefits;
 
@@ -133,6 +136,9 @@ public class SunbirdVCIServiceImpl implements SunbirdVCIService {
     }
 
    private String generatePsut(String individualId,String partnerId){
-        return tokenIDGenerator.generateTokenID(individualId,partnerId);
+        String token= tokenIDGenerator.generateTokenID(individualId,authpartnerId);
+        return tokenIDGenerator.generateTokenID(token,partnerId);
     }
+
+
 }
