@@ -35,7 +35,6 @@ public class RestClient {
     private Environment environment;
 
     @Autowired
-    @Qualifier("selfTokenRestTemplate")
     private RestTemplate restTemplate;
 
     /** The Constant AUTHORIZATION. */
