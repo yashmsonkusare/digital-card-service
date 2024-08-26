@@ -119,7 +119,6 @@ public class DigitalCardServiceImpl implements DigitalCardService {
                 credential = restClient.getForObject(dataShareUrl, String.class);
             }
             decryptedCredential = encryptionUtil.decryptData(credential);
-            logger.info("decrypted data: {}",decryptedCredential);
             JSONObject jsonObject = new org.json.JSONObject(decryptedCredential);
             JSONObject decryptedCredentialJson = jsonObject.getJSONObject("credentialSubject");
             rid=getRid(decryptedCredentialJson.get("id"));
